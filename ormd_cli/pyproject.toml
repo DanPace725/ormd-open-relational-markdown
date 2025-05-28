@@ -1,0 +1,18 @@
+# pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ormd-cli"
+version = "0.1.0"
+description = "CLI tool for Open Relational Markdown"
+dependencies = [
+    "click>=8.0",
+    "pyyaml>=6.0",
+    "markdown>=3.4",
+    "jsonschema>=4.0",
+]
+
+[project.scripts]
+ormd = "ormd_cli.main:cli"

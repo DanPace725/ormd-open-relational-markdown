@@ -1,0 +1,2 @@
+[console_scripts]
+ormd = ormd_cli.main:cli
