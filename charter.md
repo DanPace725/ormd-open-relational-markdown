@@ -1,0 +1,80 @@
+# ORMD Project Charter
+
+**Project Name:** Open Relational Markdown (`.ormd`)
+
+**Version:** 0.1 Draft
+
+**Date:** 2025-05-28
+
+---
+
+## 1. Vision
+
+Create a next-generation document format that empowers authors and readers by combining the simplicity and ubiquity of Markdown with a relational layer for semantic connections, live collaboration, and verifiable provenance. `.ormd` stands for **Open Relational Markdown**, a format designed to be human-readable, machine-interpretable, and resistant to obsolescence.
+
+## 2. Mission
+
+* **Human-centered:** Documents must be readable, writable, and inspectable as plain text.
+* **Open & portable:** Leverage existing standards (CommonMark, JSON-LD, ZIP) to maximize compatibility.
+* **Relational:** Allow authors to express semantic relationships and metadata inline.
+* **Integrity-preserving:** Support cryptographic signatures and change-history embedding.
+* **Collaborative:** Enable offline-first real-time collaboration via CRDTs.
+* **Future-proof:** Provide clear upgrade paths and a stable spec to avoid format fragmentation.
+
+## 3. Scope
+
+### In-Scope (0.1 MVP)
+
+* Core syntax extensions on top of CommonMark (YAML front-matter, `links:` triples).
+* Canonical plain-text `.ormd` file with optional ZIP packaging.
+* Basic CLI for packaging, unpacking, and validating `.ormd` files.
+* HTML renderer for preview and web viewing.
+
+### Out-of-Scope (0.1)
+
+* CRDT change-feed integration (planned for v0.2).
+* Built-in comment or annotation system (future enhancement).
+* Official GUI editors (third-party plugins only).
+
+## 4. Deliverables
+
+1. **Spec Document:** `spec/ormd-0.1.md` describing syntax, packaging, and versioning.
+2. **Example Files:** `examples/hello.ormd`, `examples/report.ormd`.
+3. **CLI Tool:** `ormd-cli` with `pack`, `unpack`, and `validate` commands.
+4. **HTML Renderer:** `ormd-js` library + minimal viewer.
+5. **GitHub Org:** `open-relational-markdown` with repositories, issue templates, and governance docs.
+
+## 5. Stakeholders
+
+* **Core Team:** Spec authors, CLI maintainers, library developers.
+* **Early Adopters:** Content creators, open-source tool authors, interoperability advocates.
+* **Standards Partners:** W3C Publishing WG, OASIS ODF TC, C2PA.
+* **Community:** Users, contributors, plugin developers (Obsidian, VS Code).
+
+## 6. Principles & Governance
+
+* **Transparency:** All discussions and decisions occur publicly in the GitHub org and WG mailing list.
+* **Inclusivity:** Open invitation to contribute; code of conduct enforced.
+* **Meritocracy:** Feature proposals and spec changes evaluated on technical merit and community impact.
+* **Stability:** Backward compatibility prioritized; deprecations handled via clear migration paths.
+* **Lifecycle:** Versioned releases (`0.1`, `0.2`, `1.0`) with release notes and conformance tests.
+
+## 7. Timeline (v0.1)
+
+| Phase         | Dates           | Milestone                                    |
+| ------------- | --------------- | -------------------------------------------- |
+| Planning      | May 28 – Jun 4  | Charter, GitHub org, spec skeleton           |
+| Draft Spec    | Jun 5 – Jun 18  | Complete `ormd-0.1.md`, define test vectors  |
+| Tooling Alpha | Jun 19 – Jul 12 | `ormd-cli` pack/unpack/validate; HTML output |
+| Public Alpha  | Jul 13 – Jul 31 | Publish examples; collect feedback           |
+| Spec Freeze   | Aug 1 – Aug 15  | Release `ormd-0.1`; register MIME type       |
+
+## 8. License & IP
+
+* **Specification:** Creative Commons Zero (CC0) or Unlicense.
+* **Tooling:** MIT or Apache-2.0 license.
+* **Trademarks:** `.ormd` logo and name managed by the WG.
+
+---
+
+*This charter establishes the foundation for building `.ormd`—a living, relational document format that honors human authorship and embraces open collaboration.*
