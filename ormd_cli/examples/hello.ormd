@@ -1,20 +1,59 @@
 <!-- ormd:0.1 -->
 ---
-title: Hello ORMD
+title: ORMD Render Test Document
 authors:
   - id: daniel.pace
     display: Daniel Pace
+  - id: jane.smith
+    display: Jane Smith
 links:
   - id: g1
     rel: supports
     to: "#goal"
+  - id: c1
+    rel: refutes
+    to: "#challenge"
+  - id: r1
+    rel: related
+    to: "#related-work"
+  - id: f1
+    rel: supports
+    to: "#feature"
 ---
-# Hello ORMD
+# ORMD Render Test Document
 
-This is a **living document** that combines Markdown and semantic links.
+Welcome to the **ORMD Render Test**. This document is designed to test the renderer's ability to handle:
 
-See [[g1]] for the guiding principle.
+- Multiple authors
+- Various link types (`supports`, `refutes`, `related`)
+- Section anchors and references
+- Semantic link rendering
+
+See [[g1]] for the main goal, [[c1]] for a challenge, and [[r1]] for related work. The new feature is discussed in [[f1]].
 
 ## Goal {#goal}
 
-Open. Relational. Markdown.
+Open. Relational. Markdown. Documents that are:
+- Human-readable
+- Semantically rich
+- Collaborative
+
+## Challenge {#challenge}
+
+PDFs are visually consistent but hard to edit and collaborate on. See how ORMD addresses this in [[g1]].
+
+## Related Work {#related-work}
+
+- Markdown
+- Pandoc
+- Jupyter Notebooks
+
+## New Feature {#feature}
+
+The renderer now supports:
+- Collapsible sidebar
+- Document graph visualization
+- Raw .ormd view
+- Change history panel
+
+Try referencing [[g1]], [[c1]], and [[r1]] throughout the document to test link highlighting and graph generation.

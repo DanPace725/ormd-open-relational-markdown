@@ -1,0 +1,155 @@
+{
+    "@context": "https://openrel.org/ormd/context.jsonld",
+    "title": "Climate Change Impact on Coastal Cities: A Comprehensive Analysis",
+    "authors": [
+      {
+        "id": "dr.sarah.chen",
+        "display": "Dr. Sarah Chen",
+        "affiliation": "Marine Research Institute",
+        "email": "s.chen@marinereserach.org",
+        "orcid": "0000-0002-1825-0097"
+      },
+      {
+        "id": "prof.james.rodriguez", 
+        "display": "Prof. James Rodriguez",
+        "affiliation": "Urban Planning Department",
+        "email": "j.rodriguez@university.edu",
+        "orcid": "0000-0003-4567-8901"
+      }
+    ],
+    "created": "2025-05-28T09:00:00Z",
+    "modified": "2025-05-28T14:30:00Z",
+    "version": "1.0",
+    "status": "published",
+    "description": "A comprehensive analysis examining the multifaceted impacts of climate change on coastal urban areas, including sea-level rise, temperature increases, and socioeconomic consequences.",
+    "keywords": [
+      "climate change",
+      "coastal cities", 
+      "sea-level rise",
+      "urban planning",
+      "infrastructure",
+      "adaptation",
+      "mitigation",
+      "economic impact"
+    ],
+    "subject": "Environmental Science",
+    "type": "research-report",
+    "language": "en-US",
+    "license": "CC-BY-4.0",
+    "doi": "10.1000/182",
+    "wordCount": 2847,
+    "readingTime": "12 minutes",
+    "links": {
+      "total": 12,
+      "relationships": {
+        "supports": 8,
+        "related": 2, 
+        "refutes": 1,
+        "enables": 1
+      }
+    },
+    "sections": [
+      {
+        "id": "executive-summary",
+        "title": "Executive Summary",
+        "wordCount": 156
+      },
+      {
+        "id": "introduction", 
+        "title": "Introduction",
+        "wordCount": 203
+      },
+      {
+        "id": "sea-level-rise",
+        "title": "Sea-Level Rise Analysis", 
+        "wordCount": 287
+      },
+      {
+        "id": "temperature-trends",
+        "title": "Temperature Trends and Urban Heat Islands",
+        "wordCount": 198
+      },
+      {
+        "id": "economic-analysis",
+        "title": "Economic Analysis",
+        "wordCount": 312
+      },
+      {
+        "id": "population-displacement", 
+        "title": "Population Displacement Concerns",
+        "wordCount": 234
+      },
+      {
+        "id": "infrastructure",
+        "title": "Infrastructure Challenges",
+        "wordCount": 267
+      },
+      {
+        "id": "case-studies",
+        "title": "Case Studies",
+        "wordCount": 398
+      },
+      {
+        "id": "technology",
+        "title": "Technology Solutions", 
+        "wordCount": 234
+      },
+      {
+        "id": "policy-solutions",
+        "title": "Policy Solutions and Recommendations",
+        "wordCount": 189
+      },
+      {
+        "id": "mitigation",
+        "title": "Mitigation Strategies",
+        "wordCount": 134
+      },
+      {
+        "id": "adaptation", 
+        "title": "Adaptation Approaches",
+        "wordCount": 156
+      },
+      {
+        "id": "skeptical-view",
+        "title": "Addressing Skeptical Perspectives",
+        "wordCount": 123
+      }
+    ],
+    "permissions": {
+      "mode": "published",
+      "editable": true,
+      "signed": false,
+      "publicAccess": "read-only",
+      "collaborators": [
+        {
+          "id": "dr.sarah.chen",
+          "permissions": ["read", "write", "admin"]
+        },
+        {
+          "id": "prof.james.rodriguez", 
+          "permissions": ["read", "write", "admin"]
+        }
+      ]
+    },
+    "provenance": {
+      "contentHash": "SHA256:7d4e8f2a9c1b6e3d8f7a2c5b9e8d1f4a6b3c8e9f2d5a7c1b4e8f3a6d9c2e5f8b1a4d7c9",
+      "metadataHash": "SHA256:3f8e1d4a7c2b9e6f1a5d8c3b7e2f9a4d6c1e8f5b2a9d7e3c6f1a4b8e5d2c9f6a3e1d4",
+      "generator": "ormd-cli v0.1.0",
+      "formatVersion": "ormd:0.1"
+    },
+    "analytics": {
+      "complexity": "high",
+      "technicalLevel": "academic",
+      "citations": 0,
+      "figures": 0,
+      "tables": 0,
+      "equations": 0
+    },
+    "distribution": {
+      "format": "ormd-package",
+      "packaging": "zip",
+      "compression": true,
+      "assets": [],
+      "totalSize": "47KB"
+    }
+  }
