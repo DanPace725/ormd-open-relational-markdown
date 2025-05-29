@@ -1,0 +1,304 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Test Document - ORMD Render</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f8f9fa;
+      color: #222;
+    }
+    #container {
+      display: flex;
+      min-height: 100vh;
+    }
+    #sidebar {
+      width: 320px;
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      transition: width 0.2s;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      z-index: 2;
+    }
+    #sidebar.collapsed {
+      width: 56px;
+    }
+    #sidebar nav {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    #sidebar nav button {
+      background: none;
+      border: none;
+      padding: 16px 12px;
+      font-size: 1.2em;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.1s;
+      display: flex;
+      align-items: center;
+    }
+    #sidebar nav button .label {
+      margin-left: 10px;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    #sidebar.collapsed nav button .label {
+      opacity: 0;
+      width: 0;
+      overflow: hidden;
+    }
+    #sidebar nav button.active {
+      background: #f0f0f0;
+      font-weight: bold;
+    }
+    .panel {
+      display: none;
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .panel.active {
+      display: block;
+    }
+    #collapse-btn {
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+      align-self: flex-end;
+      margin: 8px;
+    }
+    #main-doc {
+      flex: 1;
+      padding: 40px 5vw;
+      background: #f8f9fa;
+      min-width: 0;
+      z-index: 1;
+    }
+    pre, code {
+      background: #f4f4f4;
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 0.95em;
+      overflow-x: auto;
+    }
+    /* Raw ORMD modal overlay */
+    #raw-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    #raw-modal.active {
+      display: flex;
+    }
+    #raw-modal-content {
+      background: #fff;
+      border-radius: 8px;
+      max-width: 800px;
+      width: 90vw;
+      max-height: 80vh;
+      padding: 24px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.2);
+      overflow: auto;
+      position: relative;
+    }
+    #close-raw-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+      color: #888;
+    }
+    @media (max-width: 700px) {
+      #sidebar {
+        position: absolute;
+        z-index: 10;
+        height: 100vh;
+        left: 0;
+        top: 0;
+      }
+      #main-doc {
+        padding: 24px 2vw;
+      }
+    }
+    .ormd-link { padding: 2px 6px; border-radius: 4px; text-decoration: none; font-weight: 500; }
+    .ormd-link-supports { background: #e3f6e3; color: #217a21; border: 1px solid #b6e6b6; }
+    .ormd-link-refutes { background: #ffeaea; color: #b80000; border: 1px solid #ffb3b3; }
+    .ormd-link-related { background: #eaf4ff; color: #1a4d80; border: 1px solid #b3d1ff; }
+    .ormd-link-undefined { background: #f9e6e6; color: #a94442; border: 1px solid #e4b9b9; }
+  
+.ormd-link { padding: 2px 6px; border-radius: 4px; text-decoration: none; font-weight: 500; }
+.ormd-link-supports { background: #e3f6e3; color: #217a21; border: 1px solid #b6e6b6; }
+.ormd-link-refutes { background: #ffeaea; color: #b80000; border: 1px solid #ffb3b3; }
+.ormd-link-related { background: #eaf4ff; color: #1a4d80; border: 1px solid #b3d1ff; }
+.ormd-link-undefined { background: #f9e6e6; color: #a94442; border: 1px solid #e4b9b9; }
+</style>
+  <!-- D3.js for document graph -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+  <div id="container">
+    <div id="sidebar" class="collapsed">
+      <button id="collapse-btn" title="Toggle sidebar">☰</button>
+      <nav>
+        <button id="toggle-raw" type="button"><span class="icon">👁</span><span class="label">Raw .ormd</span></button>
+        <button id="toggle-graph" type="button" class="active"><span class="icon">🧬</span><span class="label">Document Graph</span></button>
+        <button id="toggle-history" type="button"><span class="icon">✍️</span><span class="label">Change History</span></button>
+      </nav>
+      <div id="panel-graph" class="panel active">
+        <h3>Document Graph</h3>
+        <ul id="link-outline"></ul>
+        <div id="graph-container" style="width:100%;height:400px;display:none;"></div>
+      </div>
+      <div id="panel-history" class="panel">
+        <h3>Change History</h3>
+        <div id="history-content"></div>
+      </div>
+    </div>
+    <div id="main-doc">
+      <h1 id="simple-test-document">Simple Test Document</h1>
+<p>This is a test of the new single-file ORMD format. The <a href="#introduction" class="ormd-link ormd-link-supports">[[intro-ref]]</a> should link to the introduction section below.</p>
+<h2 id="introduction">Introduction</h2>
+<p>This introduction explains the purpose of this test document. It demonstrates how semantic links work in the new format.</p>
+<h2 id="main-content">Main Content</h2>
+<p>Here's some content that references our <a href="#conclusion" class="ormd-link ormd-link-supports">[[conclusion-ref]]</a> to show bidirectional linking.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>This conclusion wraps up our test document and validates that the parsing works correctly.</p>
+<p>+++meta
+created: 2025-05-29T10:00:00Z
+modified: 2025-05-29T10:00:00Z
+version: 1.0
+status: draft
+permissions:
+  mode: draft
+  editable: true
+  signed: false
+wordCount: 145
+readingTime: 1 minute
++++end-meta</p>
+    </div>
+    <div id="raw-modal">
+      <div id="raw-modal-content">
+        <button id="close-raw-btn" title="Close">&times;</button>
+        <h3>Raw .ormd</h3>
+        <pre id="raw-content">&lt;!-- ormd:0.1 --&gt;
+---
+title: Simple Test Document
+authors:
+  - id: test.author
+    display: Test Author
+links:
+  - id: intro-ref
+    rel: supports
+    to: "#introduction"
+  - id: conclusion-ref
+    rel: supports
+    to: "#conclusion"
+---
+
+# Simple Test Document
+
+This is a test of the new single-file ORMD format. The [[intro-ref]] should link to the introduction section below.
+
+## Introduction {#introduction}
+
+This introduction explains the purpose of this test document. It demonstrates how semantic links work in the new format.
+
+## Main Content
+
+Here's some content that references our [[conclusion-ref]] to show bidirectional linking.
+
+## Conclusion {#conclusion}
+
+This conclusion wraps up our test document and validates that the parsing works correctly.
+
++++meta
+created: 2025-05-29T10:00:00Z
+modified: 2025-05-29T10:00:00Z
+version: 1.0
+status: draft
+permissions:
+  mode: draft
+  editable: true
+  signed: false
+wordCount: 145
+readingTime: 1 minute
++++end-meta</pre>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Sidebar toggle logic
+    const sidebar = document.getElementById('sidebar');
+    const collapseBtn = document.getElementById('collapse-btn');
+    collapseBtn.onclick = () => {
+      sidebar.classList.toggle('collapsed');
+    };
+    // Panel switching logic
+    const panels = ['graph', 'history'];
+    panels.forEach(name => {
+      document.getElementById('toggle-' + name).onclick = () => {
+        panels.forEach(n => {
+          document.getElementById('toggle-' + n).classList.remove('active');
+          document.getElementById('panel-' + n).classList.remove('active');
+        });
+        document.getElementById('toggle-' + name).classList.add('active');
+        document.getElementById('panel-' + name).classList.add('active');
+      };
+    });
+    // Raw .ormd modal logic
+    const rawModal = document.getElementById('raw-modal');
+    const rawBtn = document.getElementById('toggle-raw');
+    const closeRawBtn = document.getElementById('close-raw-btn');
+    rawBtn.onclick = () => {
+      rawModal.classList.add('active');
+    };
+    closeRawBtn.onclick = () => {
+      rawModal.classList.remove('active');
+    };
+    rawModal.onclick = (e) => {
+      if (e.target === rawModal) rawModal.classList.remove('active');
+    };
+    // Populate outline/tree in graph panel
+    window.ormdLinks = window.ormdLinks || [];
+    function renderLinkOutline(links) {
+      const outline = document.getElementById('link-outline');
+      outline.innerHTML = '';
+      if (!links.length) {
+        outline.innerHTML = '<li><em>No links defined</em></li>';
+        return;
+      }
+      links.forEach(l => {
+        const li = document.createElement('li');
+        li.textContent = `${l.id} (${l.rel}) → ${l.to}`;
+        outline.appendChild(li);
+      });
+    }
+    // D3.js graph rendering placeholder (hidden for now)
+    function renderGraph(links) {
+      window.ormdLinks = links;
+      renderLinkOutline(links);
+      // Uncomment below to show D3 graph
+      // document.getElementById('graph-container').style.display = '';
+      // ... D3.js code ...
+    }
+    // Example usage: replaced by Python
+    renderGraph([{"id": "intro-ref", "rel": "supports", "to": "#introduction"}, {"id": "conclusion-ref", "rel": "supports", "to": "#conclusion"}]);
+  </script>
+</body>
+</html>

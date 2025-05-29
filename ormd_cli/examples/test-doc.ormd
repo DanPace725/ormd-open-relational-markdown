@@ -1,0 +1,43 @@
+<!-- ormd:0.1 -->
+---
+title: Simple Test Document
+authors:
+  - id: test.author
+    display: Test Author
+links:
+  - id: intro-ref
+    rel: supports
+    to: "#introduction"
+  - id: conclusion-ref
+    rel: supports
+    to: "#conclusion"
+---
+
+# Simple Test Document
+
+This is a test of the new single-file ORMD format. The [[intro-ref]] should link to the introduction section below.
+
+## Introduction {#introduction}
+
+This introduction explains the purpose of this test document. It demonstrates how semantic links work in the new format.
+
+## Main Content
+
+Here's some content that references our [[conclusion-ref]] to show bidirectional linking.
+
+## Conclusion {#conclusion}
+
+This conclusion wraps up our test document and validates that the parsing works correctly.
+
++++meta
+created: 2025-05-29T10:00:00Z
+modified: 2025-05-29T10:00:00Z
+version: 1.0
+status: draft
+permissions:
+  mode: draft
+  editable: true
+  signed: false
+wordCount: 145
+readingTime: 1 minute
++++end-meta
