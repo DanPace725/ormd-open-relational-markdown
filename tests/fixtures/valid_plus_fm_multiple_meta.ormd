@@ -1,0 +1,24 @@
+<!-- ormd:0.1 -->
++++
+title: "Valid Plus Front Matter with Multiple Meta"
+authors: ["Test User"]
+links:
+  - id: "link1"
+    rel: "related"
+    to: "doc2.ormd"
++++
+
+This is the initial part of the body.
+
++++meta
+default_info: "Default metadata block"
++++end-meta
+
+Some more body content.
+
++++meta section2
+custom_info: "Metadata for section 2"
+priority: high
++++end-meta
+
+Final part of the body.

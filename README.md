@@ -18,6 +18,19 @@ This monorepo contains all you need to **spec**, **build**, and **demo** ORMD.
 
 ---
 
+## ✨ ORMD Format Update
+
+ORMD has recently updated its format specification to enhance clarity and parsing robustness:
+
+*   **Front-matter:** Now uses `+++` on lines by themselves to open and close the front-matter block.
+*   **Metadata Blocks:** A new structured format `+++meta <optional_id>` (to open) and `+++end-meta` (to close) allows for embedding distinct metadata sections within the document body. If `<optional_id>` is omitted, it defaults to a standard identifier (e.g., "default").
+*   **Parsing:** The reference parser has been upgraded to a state machine implementation. This makes parsing more robust and avoids previous ambiguities if `---` or `+++` sequences appeared in the document body.
+*   **Backward Compatibility:** The original `---` delimiters for front-matter are still fully supported for backward compatibility with existing documents.
+
+These updates are reflected in the [ORMD 0.1 specification](./spec/ormd-0.1.md) and supported by the `ormd-cli` tool.
+
+---
+
 ## 📁 Repository Structure
 
 ```

@@ -1,0 +1,13 @@
+<!-- ormd:0.1 -->
++++
+title: "Document with Empty Meta Block"
+authors: ["Test User"]
+links: []
++++
+
+This is the body.
+
++++meta
++++end-meta
+This document has an explicitly empty metadata block.
+It should be valid.

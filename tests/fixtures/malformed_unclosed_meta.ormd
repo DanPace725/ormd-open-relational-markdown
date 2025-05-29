@@ -1,0 +1,19 @@
+<!-- ormd:0.1 -->
++++
+title: "Malformed Unclosed Meta"
+authors: ["Test User"]
+links:
+  - id: "ref1"
+    rel: "test"
+    to: "other.ormd"
++++
+
+This is the body.
+[[ref1]]
+
++++meta
+some_key: some_value
+This metadata block is never closed.
+This line should be part of the metadata.
+And this one too.
+Even this [[ref1]] link, now inside meta, should not be processed as a body link.

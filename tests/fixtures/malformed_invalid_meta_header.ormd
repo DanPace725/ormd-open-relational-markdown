@@ -1,0 +1,13 @@
+<!-- ormd:0.1 -->
++++
+title: "Malformed Invalid Meta Header"
+authors: ["Test User"]
+links: []
++++
+
+This is body content.
++++meta-invalid
+This line should be treated as body content because '+++meta-invalid' is not a valid meta delimiter.
+key: value
++++end-meta 
+This '+++end-meta' is also just body content as no valid meta block was opened.

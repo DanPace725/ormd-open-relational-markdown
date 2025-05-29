@@ -1,0 +1,19 @@
+<!-- ormd:0.1 -->
+---
+title: "Collision: Hyphen FM, Body Has Pluses"
+authors: ["Test User"]
+links: []
+---
+
+Body content with some pluses:
+```
+Some code:
+var x = 1 +++ 2; // Developer art
+console.log(x);
+```
+This should be parsed correctly.
+The `+++` above should not be mistaken for front-matter or metadata.
+Also, here are some +++ lines not in code blocks.
++++
++++
+The parser should treat these as body content.

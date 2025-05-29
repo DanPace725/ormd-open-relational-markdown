@@ -62,6 +62,11 @@ Check a file or package against the ORMD 0.1 spec:
 ormd-cli validate path/to/document.ormd
 ```
 
+The validator supports the latest ORMD format specifications:
+*   **Front-matter:** Uses `+++` delimiters (e.g., for YAML metadata). The older `---` delimiters are also supported for backward compatibility.
+*   **Metadata Blocks:** Supports `+++meta <optional_id> ... +++end-meta` blocks for structured metadata within the document body.
+*   **Robust Parsing:** The underlying parser uses a state machine for improved accuracy in distinguishing delimiters from document content.
+
 * **Success:** Exit code `0`
 * **Failure:** Non-zero exit code and printed errors
 

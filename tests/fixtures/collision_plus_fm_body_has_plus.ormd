@@ -1,0 +1,24 @@
+<!-- ormd:0.1 -->
++++
+title: "Collision: Plus FM, Body Has Pluses"
+authors: ["Test User"]
+links: []
++++
+
+Body content with some pluses:
+```diff
++ Added line
+++ Further details
+```
+This should be parsed correctly.
+The `+++` above should not be mistaken for new front-matter or metadata.
+What about a line that is just +++?
++++
+The parser should treat this as body content because it's not `+++meta` or `+++end-meta`.
+And `+++ meta` (with a space) should also be body content.
++++ meta
+This is not a valid meta start.
+Same for `+++ end-meta` (with a space).
++++ end-meta
+This is not a valid meta end.
+Only `+++meta` or `+++meta id` and `+++end-meta` (no trailing characters) are special.

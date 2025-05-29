@@ -1,0 +1,13 @@
+<!-- ormd:0.1 -->
+---
+title: Old Format Test
+authors: ["Test User"]
+links:
+  - id: "link1"
+    rel: "related"
+    to: "doc2.ormd"
+---
+
+This is a test document using the old '---' front-matter delimiters.
+It ensures backward compatibility of the validator.
+It contains a link to [[link1]].

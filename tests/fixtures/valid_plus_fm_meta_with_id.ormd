@@ -1,0 +1,16 @@
+<!-- ormd:0.1 -->
++++
+title: "Valid Plus Front Matter with Meta ID"
+authors: ["Test User"]
+links:
+  - id: "link1"
+    rel: "related"
+    to: "doc2.ormd"
++++
+
+This is the body.
+
++++meta custom_meta
+info: "This is custom metadata."
+version: 2
++++end-meta
