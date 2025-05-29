@@ -5,7 +5,7 @@ from ormd_cli.validator import ORMDValidator
 def test_valid_document():
     validator = ORMDValidator()
     # Test with examples/hello.ormd
-    assert validator.validate_file('examples/hello.ormd') == True
+    assert validator.validate_file('ormd_cli/examples/hello.ormd') == True
 
 def test_missing_version_tag():
     validator = ORMDValidator()
