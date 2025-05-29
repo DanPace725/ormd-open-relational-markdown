@@ -1,0 +1,118 @@
+body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #121212; /* Dark background for body */
+      color: #e0e0e0; /* Light text color for body */
+    }
+    #container {
+      display: flex;
+      min-height: 100vh;
+    }
+    #sidebar {
+      width: 320px;
+      background: #1c1c1c; /* Dark background for sidebar */
+      border-right: 1px solid #373e47; /* Lighter border for dark theme */
+      transition: width 0.2s;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: #e0e0e0; /* Light text color for sidebar */
+    }
+    #sidebar.collapsed {
+      width: 48px;
+    }
+    /* Hide nav and panels when sidebar is collapsed */
+    #sidebar.collapsed nav {
+      display: none;
+    }
+    #sidebar.collapsed .panel {
+      display: none;
+    }
+    #sidebar nav {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid #373e47; /* Lighter border for dark theme */
+    }
+    #sidebar nav button {
+      background: none;
+      border: none;
+      padding: 16px;
+      font-size: 1.2em;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.1s;
+      color: #e0e0e0; /* Light text color for buttons */
+    }
+    #sidebar nav button:hover {
+      background: #333333; /* Darker hover background for buttons */
+    }
+    #sidebar nav button.active {
+      background: #004080; /* Darker active background for buttons */
+      font-weight: bold;
+      color: #ffffff; /* White text for active button */
+    }
+    .panel {
+      display: none;
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+      background: #1c1c1c; /* Dark background for panel */
+      color: #e0e0e0; /* Light text color for panel */
+    }
+    .panel.active {
+      display: block;
+    }
+    #collapse-btn {
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+      align-self: flex-end;
+      margin: 8px;
+      color: #e0e0e0; /* Light text color for collapse button */
+    }
+    #collapse-btn:hover {
+      color: #ffffff; /* White hover color for collapse button */
+    }
+    #main-doc {
+      flex: 1;
+      padding: 40px 5vw;
+      background: #121212; /* Dark background for main document area */
+      min-width: 0;
+      color: #e0e0e0; /* Light text color for main document area */
+    }
+    pre, code {
+      background: #22272e; /* Dark background for pre/code blocks */
+      border: 1px solid #373e47; /* Lighter border for dark theme */
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 0.95em;
+      overflow-x: auto;
+      color: #c9d1d9; /* Light text color for pre/code blocks */
+    }
+    /* Ensure headings in panels are also styled for dark mode */
+    .panel h3 {
+      color: #e0e0e0;
+      border-bottom: 1px solid #373e47;
+      padding-bottom: 8px;
+    }
+
+    @media (max-width: 700px) {
+      #sidebar {
+        position: absolute;
+        z-index: 10;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        border-right: 1px solid #373e47; /* Ensure border is visible on mobile */
+      }
+      #main-doc {
+        padding: 24px 2vw;
+      }
+      /* Increase touch target size for collapse button on mobile */
+      #collapse-btn {
+        font-size: 1.8em; /* Slightly larger icon */
+        padding: 8px; /* Increased padding for easier touch */
+        margin: 4px; /* Adjust margin if needed to maintain position */
+      }
+    }
