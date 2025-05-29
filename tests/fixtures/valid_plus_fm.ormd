@@ -1,0 +1,12 @@
+<!-- ormd:0.1 -->
++++
+title: "Valid Plus Front Matter"
+authors: ["Test User"]
+links:
+  - id: "link1"
+    rel: "related"
+    to: "doc2.ormd"
++++
+
+This is the body of the document.
+It uses +++ for its front-matter.

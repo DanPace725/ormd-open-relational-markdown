@@ -1,0 +1,11 @@
+<!-- ormd:0.1 -->
++++
+title: "Meta Before Body"
+authors: ["Test User"]
+links: []
++++
++++meta
+pre_body_info: "This meta appears before the main body text."
++++end-meta
+
+This is the actual body content.

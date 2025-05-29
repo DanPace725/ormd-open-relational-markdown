@@ -1,0 +1,9 @@
+<!-- ormd:0.1 -->
++++
+title: "Meta Only No Body"
+authors: ["Test User"]
+links: []
++++
++++meta
+info: "Document consists of front-matter and this metadata block only."
++++end-meta

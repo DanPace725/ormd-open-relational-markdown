@@ -1,0 +1,16 @@
+<!-- ormd:0.1 -->
++++
+title: "Collision: Plus FM, Body Has Hyphens"
+authors: ["Test User"]
+links: []
++++
+
+Body content with a thematic break:
+---
+And a table:
+| Header 1 | Header 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+
+This should be parsed correctly.
+The `---` above should not be mistaken for front-matter.

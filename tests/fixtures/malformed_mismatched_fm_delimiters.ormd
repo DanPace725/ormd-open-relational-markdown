@@ -1,0 +1,9 @@
+<!-- ormd:0.1 -->
++++
+title: "Malformed Mismatched FM Delimiters"
+authors: ["Test User"]
+links: []
+---
+
+This was intended as body, but the front-matter is closed with '---' instead of '+++'.
+This will likely lead to a YAML parsing error.

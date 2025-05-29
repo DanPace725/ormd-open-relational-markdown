@@ -1,5 +1,5 @@
 <!-- ormd:0.1 -->
----
++++
 title: Climate Change Impact on Coastal Cities
 authors:
   - id: dr.sarah.chen
@@ -48,7 +48,7 @@ links:
   - id: technological-solution
     rel: supports
     to: "#technology"
----
++++
 
 # Climate Change Impact on Coastal Cities: A Comprehensive Analysis
 

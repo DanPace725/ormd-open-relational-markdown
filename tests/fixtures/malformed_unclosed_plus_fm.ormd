@@ -1,0 +1,8 @@
+<!-- ormd:0.1 -->
++++
+title: "Malformed Unclosed Plus FM"
+authors: ["Test User"]
+links: []
+
+This text was intended to be body, but the front-matter is not closed.
+Everything might be consumed as front-matter.
