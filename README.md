@@ -1,106 +1,284 @@
-# ORMD (Open Relational Markdown)
+# Open Relational Markdown (ORMD)
 
-> **Living, relational documents for humans and machines.**
+*A document format that doesn't suck*
 
+## The Problem Everyone Has But Nobody Talks About
+
+### PDF: The Zombie Format That Won't Die
+- ✅ **Looks identical everywhere** (its one redeeming quality)
+- ✅ **Can be "frozen"** for legal/government use (cryptographic signatures)
+- ❌ **Collaboration is hell** (email chains of "final_FINAL_v3.pdf")
+- ❌ **Editing requires expensive software** (Adobe's $20/month monopoly)
+- ❌ **Version control doesn't work** (binary blob, can't diff changes)
+- ❌ **Accessibility is terrible** (screen readers hate it)
+- ❌ **Mobile experience sucks** (fixed layouts don't adapt)
+
+### Google Docs: Great Until It Isn't
+- ✅ **Real-time collaboration** (when it works)
+- ✅ **Easy editing** (familiar interface)
+- ❌ **Vendor lock-in** (Google owns your data)
+- ❌ **Requires internet** (offline editing is clunky)
+- ❌ **No version control** (try merging two Google Docs)
+- ❌ **Export breaks formatting** (PDF export never looks right)
+- ❌ **No semantic meaning** (a link is just a link, no relationship context)
+
+### Microsoft Word: The Corporate Standard Nobody Loves
+- ✅ **Widely available** (everyone has it)
+- ✅ **Familiar interface** (30 years of muscle memory)
+- ❌ **Collaboration requires Office 365** (more vendor lock-in)
+- ❌ **Version control nightmare** ("Track Changes" isn't real version control)
+- ❌ **File corruption** (corrupted .docx files are data loss)
+- ❌ **Platform inconsistencies** (looks different on Mac vs Windows vs web)
+
+### Markdown: So Close, Yet So Far
+- ✅ **Plain text** (works in any editor, git-friendly)
+- ✅ **Universal support** (GitHub, Reddit, Discord all use it)
+- ✅ **Future-proof** (will work in 50 years)
+- ❌ **No semantic relationships** (can't express "this supports that argument")
+- ❌ **No rich metadata** (authorship, permissions, change history)
+- ❌ **No standardized sharing** (everyone has their own flavor)
+
+## The Real Problem: False Choice Between Features
+
+Current document formats force you to choose:
+- **Portable** OR **Editable** (PDF vs Word)
+- **Collaborative** OR **Version Controlled** (Google Docs vs Git)
+- **Rich formatting** OR **Future-proof** (Word vs Markdown)
+- **Semantic meaning** OR **Universal editing** (Structured data vs plain text)
+
+**What if you didn't have to choose?**
+
+## The ORMD Solution: Building on What Actually Works
+
+ORMD isn't reinventing the wheel - it's combining the best parts of existing solutions:
+
+### Built on Proven Standards
+- **CommonMark** → The markdown syntax everyone already knows
+- **YAML front-matter** → Used by Jekyll, Hugo, Obsidian, and countless others
+- **ZIP packaging** → Universal compression, works everywhere
+- **Cryptographic signatures** → Same tech securing the entire internet
+- **Git workflows** → Fork, merge, attribution patterns developers trust
+
+### Core Innovation: Semantic Relationships
+```markdown
+---
+title: Research Paper
+links:
+  - id: methodology-support
+    rel: supports
+    to: "#methodology"
+  - id: contrary-evidence  
+    rel: refutes
+    to: "#opposing-view"
 ---
 
-## 🚀 Project Overview
+# Research Paper
 
-ORMD is a next-generation document format that combines the simplicity and ubiquity of Markdown with a relational metadata layer, verifiable provenance, and open packaging. Our goal is to empower authors and readers with documents that are:
+Our findings [[methodology-support]] show clear evidence.
+However, [[contrary-evidence]] suggests we need more data.
 
-* **Readable & writable** as plain text
-* **Inspectable & editable** anywhere
-* **Relational**—connect ideas semantically
-* **Integrity-preserving** with digital signatures
-* **Collaborative** and future-proof
+## Methodology {#methodology}
+We used standard protocols...
 
-This monorepo contains all you need to **spec**, **build**, and **demo** ORMD.
-
----
-
-## ✨ ORMD Format Update
-
-ORMD has recently updated its format specification to enhance clarity and parsing robustness:
-
-*   **Front-matter:** Now uses `+++` on lines by themselves to open and close the front-matter block.
-*   **Metadata Blocks:** A new structured format `+++meta <optional_id>` (to open) and `+++end-meta` (to close) allows for embedding distinct metadata sections within the document body. If `<optional_id>` is omitted, it defaults to a standard identifier (e.g., "default").
-*   **Parsing:** The reference parser has been upgraded to a state machine implementation. This makes parsing more robust and avoids previous ambiguities if `---` or `+++` sequences appeared in the document body.
-*   **Backward Compatibility:** The original `---` delimiters for front-matter are still fully supported for backward compatibility with existing documents.
-
-These updates are reflected in the [ORMD 0.1 specification](./spec/ormd-0.1.md) and supported by the `ormd-cli` tool.
-
----
-
-## 📁 Repository Structure
-
+## Opposing View {#opposing-view}
+Critics argue that...
 ```
-ormd/                   ← Monorepo root
-├── README.md           ← (This file) High-level overview & navigation
-├── spec/               ← ORMD 0.1 specification, test vectors, and context
-│   └── ormd-0.1.md     ← Core spec document
-├── cli/                ← `ormd-cli` command-line tool
-│   ├── README.md       ← Usage & installation for CLI
-│   └── src/            ← Source code for `ormd-cli`
-├── examples/           ← Sample ORMD documents (plain & packaged)
-│   ├── hello.ormd
-│   └── invoice.ormd.zip
-├── docs/               ← (Optional) Tutorials, deep dives, roadmaps
-└── .github/            ← Issue & PR templates, workflows, contributing GUIDELINES
+
+**The magic:** `[[link-id]]` becomes clickable relationships with semantic meaning. Not just "click here" but "this supports that argument" or "this refutes that claim."
+
+### Document Lifecycle: Draft → Published → Signed
+
+#### Draft Mode (.ormd file)
+```
+document.ormd  # Plain text, editable in anything
+```
+- Edit in **any text editor** (VS Code, Vim, Notepad, phone notes app)
+- **Git version control** works perfectly (diffs, merges, blame)
+- **Collaboration** through pull requests and forks
+- **No vendor lock-in** (it's just text)
+
+#### Published Mode (.ormd.zip package)
+```
+document.ormd.zip
+├── content.ormd     # The document
+├── meta.json       # Rich metadata, permissions
+└── assets/         # Images, data files
+    ├── chart.png
+    └── data.csv
+```
+- **Self-contained** like PDF (everything in one file)
+- **Still editable** (unpack, edit, repack)
+- **Rich metadata** (authorship, creation date, word count)
+- **Asset embedding** (images, spreadsheets, charts)
+
+#### Signed Mode (.ormd.zip + cryptographic signature)
+```
+document-signed.ormd.zip  # Cryptographically frozen
+```
+- **Tamper-evident** (any change breaks the signature)
+- **Legal permanence** (like PDF for government/legal use)
+- **Provenance chain** (who signed when, with what key)
+- **Still readable** (even if signature is broken)
+
+### The "Excel Killer" Feature
+
+Ever tried to version control an Excel file? It's impossible. But ORMD can convert spreadsheets to human-readable text while preserving formulas:
+
+```markdown
+## Q4 Budget
+
+| Category | Budget | Actual | Variance |
+|----------|--------|--------|----------|
+| Marketing | $50,000 | $45,000 | `=C2-B2` |
+| Engineering | $200,000 | $210,000 | `=C3-B3` |
+
+**Total Variance:** `=SUM(D2:D3)`
 ```
 
+**The breakthrough:** Formulas become visible text, but calculations still work. Suddenly Excel files can be version controlled, collaborated on, and understood without Excel.
+
+## Universal Editing: The Real Innovation
+
+ORMD files work in:
+- **VS Code** (with syntax highlighting)
+- **Vim** (because vim works everywhere)
+- **Notepad** (on any Windows machine)
+- **TextEdit** (on any Mac)
+- **Phone notes apps** (edit documents on mobile)
+- **Web browsers** (view and edit without installing anything)
+- **Obsidian** (for knowledge management folks)
+- **Any text editor ever made**
+
+**No custom software required.** If you can edit text, you can edit ORMD.
+
+## Real-World Use Cases
+
+### Academic Writing
+```bash
+# Write paper in any editor
+vim research-paper.ormd
+
+# Collaborate with Git
+git add research-paper.ormd
+git commit -m "Add methodology section"
+git push
+
+# Colleague reviews
+git checkout -b peer-review
+# Edit document, add comments
+git commit -m "Suggest methodology improvements"
+git push
+
+# Merge changes
+git merge peer-review
+
+# Submit to journal
+ormd sign research-paper.ormd --key=university.pem
+# Creates tamper-proof submission
+```
+
+### Legal Documents
+```bash
+# Draft contract
+ormd init contract.ormd --template=legal
+
+# Negotiate changes (tracked in Git)
+git log --oneline contract.ormd
+# abc1234 Add termination clause
+# def5678 Adjust payment terms  
+# ghi9012 Initial draft
+
+# Final execution
+ormd sign contract.ormd --key=law-firm.pem
+# Legal permanence achieved
+```
+
+### Corporate Documentation
+```bash
+# Write in markdown, get PDF output
+ormd render handbook.ormd --format=pdf
+
+# Convert existing Excel to ORMD
+ormd convert budget.xlsx --output=budget.ormd
+# Now your spreadsheet is version controllable!
+
+# Share with team
+ormd publish handbook.ormd --permissions=read-only
+# Creates shareable package
+```
+
+## Why This Will Work
+
+### 1. **Progressive Enhancement**
+- Start with plain text (works everywhere)
+- Add metadata when needed (ZIP packaging)
+- Add signatures when required (legal permanence)
+
+### 2. **Network Effects**
+- More ORMD files → more tool support
+- More tools → easier adoption
+- Easier adoption → more files
+
+### 3. **No Vendor Lock-in**
+- Plain text foundation means you can always get your data out
+- Open source tools mean no subscription fees
+- Standard formats mean 50-year compatibility
+
+### 4. **Solves Real Pain Points**
+- **Collaboration:** Git workflows everyone already knows
+- **Version control:** Diffs and merges that actually work
+- **Portability:** One file contains everything
+- **Future-proofing:** Built on text and open standards
+
+## Current Status
+
+✅ **Working CLI** (`validate`, `pack`, `unpack`, `render`)  
+✅ **HTML renderer** with semantic link visualization  
+✅ **Single-file format** (no ZIP required for simple docs)  
+✅ **Relationship graph** (see document structure visually)  
+⏳ **Asset embedding** (images, spreadsheets)  
+⏳ **VS Code extension** (syntax highlighting, preview)  
+⏳ **Cryptographic signing** (tamper-proof documents)  
+⏳ **Format converters** (Excel → ORMD, Word → ORMD)  
+
+## Get Started
+
+```bash
+# Install
+pip install ormd-cli
+
+# Create your first document
+ormd init my-document.ormd
+
+# Edit in any text editor
+code my-document.ormd
+
+# Render to HTML
+ormd render my-document.ormd
+# Creates portable HTML file
+
+# Validate
+ormd validate my-document.ormd
+
+# Share as package
+ormd publish my-document.ormd
+# Creates self-contained .ormd.zip
+```
+
+## The Philosophy
+
+**Documents should be:**
+- **Human-readable** (you can understand them without special software)
+- **Machine-processable** (tools can extract meaning and relationships)
+- **Universally editable** (any text editor works)
+- **Version controllable** (Git treats them like code)
+- **Portable** (one file contains everything)
+- **Future-proof** (will work in 50 years)
+
+**ORMD is what PDF should have been if it was designed today.**
+
 ---
 
-## 🏁 Getting Started
+*"The best way to predict the future is to invent it." - Alan Kay*
 
-1. **Read the Spec**: everything begins with the [ORMD 0.1 specification](./spec/ormd-0.1.md).
-2. **Try the CLI**:
-
-   * Jump into the `cli/` directory and follow its [README](./cli/README.md).
-3. **Explore Examples**:
-
-   * Open `examples/hello.ormd` in your favorite editor.
-   * Unpack and inspect `examples/invoice.ormd.zip`.
-4. **Contribute**:
-
-   * Check out [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for guidelines.
-
----
-
-## 📦 CLI (ormd-cli)
-
-`ormd-cli` provides commands to validate, pack, and unpack ORMD documents. See [`cli/README.md`](./cli/README.md) for details.
-
----
-
-## 📘 Specification (spec)
-
-The `spec/` directory holds the official ORMD 0.1 spec, including syntax rules, packaging format, metadata structure, and validation criteria.
-
----
-
-## 🔌 Examples
-
-Browse the `examples/` folder to see real `.ormd` files in action, including:
-
-* **hello.ormd** — A simple living document example
-* **invoice.ormd.zip** — A signed invoice package
-
----
-
-## 🤝 Contributing
-
-We welcome all contributions! Please:
-
-1. Review our [Code of Conduct](./.github/CODE_OF_CONDUCT.md).
-2. Read [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for workflow and style.
-3. Open issues, discuss features, and submit PRs under the `open-relational-markdown` GitHub org.
-
----
-
-## ⚖️ License
-
-The spec is published under **CC0**. Tooling and examples are under **MIT** or **Apache-2.0**—see each subproject for details.
-
----
-
-*ORMD: Dog-food from day one. Build living, relational documents that respect human authorship and collaboration.*
+We're not just building a file format. We're building the future of human knowledge sharing.

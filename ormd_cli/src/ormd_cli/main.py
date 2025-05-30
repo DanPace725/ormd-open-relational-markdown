@@ -152,16 +152,8 @@ def render(input_file, out):
         main_html=main_html,
         history=history
     )
-    additional_styles = '''
-<style>
-.ormd-link { padding: 2px 6px; border-radius: 4px; text-decoration: underline; font-weight: 500; }
-.ormd-link-supports { background: #e3f6e3; color: #217a21; border: 1px solid #b6e6b6; }
-.ormd-link-refutes { background: #ffeaea; color: #b80000; border: 1px solid #ffb3b3; }
-.ormd-link-related { background: #eaf4ff; color: #1a4d80; border: 1px solid #b3d1ff; }
-.ormd-link-undefined { background: #f9e6e6; color: #a94442; border: 1px solid #e4b9b9; }
-</style>
-'''
-    html = html.replace('</head>', additional_styles + '\n</head>')
+    
+
 
     # Insert links data for D3.js graph (as a JS variable)
     links_json = json.dumps(links)
