@@ -1,0 +1,398 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORMD Schema Example: Climate Change Analysis - ORMD Render</title>
+  <style>
+    /* Inlined CSS for full portability */
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #121212;
+      color: #e0e0e0;
+    }
+    #container {
+      display: flex;
+      min-height: 100vh;
+    }
+    #sidebar {
+      width: 320px;
+      background: #1c1c1c;
+      border-right: 1px solid #373e47;
+      transition: width 0.2s;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: #e0e0e0;
+    }
+    #sidebar.collapsed {
+      width: 48px;
+    }
+    #sidebar.collapsed nav {
+      display: none;
+    }
+    #sidebar.collapsed .panel {
+      display: none;
+    }
+    #sidebar nav {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid #373e47;
+    }
+    #sidebar nav button {
+      background: none;
+      border: none;
+      padding: 16px;
+      font-size: 1.2em;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.1s;
+      color: #e0e0e0;
+    }
+    #sidebar nav button:hover {
+      background: #333333;
+    }
+    #sidebar nav button.active {
+      background: #004080;
+      font-weight: bold;
+      color: #ffffff;
+    }
+    .panel {
+      display: none;
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+      background: #1c1c1c;
+      color: #e0e0e0;
+    }
+    .panel.active {
+      display: block;
+    }
+    #collapse-btn {
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+      align-self: flex-end;
+      margin: 8px;
+      color: #e0e0e0;
+    }
+    #collapse-btn:hover {
+      color: #ffffff;
+    }
+    #main-doc {
+      flex: 1;
+      padding: 40px 5vw;
+      background: #121212;
+      min-width: 0;
+      color: #e0e0e0;
+    }
+    pre, code {
+      background: #22272e;
+      border: 1px solid #373e47;
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 0.95em;
+      overflow-x: auto;
+      color: #c9d1d9;
+    }
+    .panel h3 {
+      color: #e0e0e0;
+      border-bottom: 1px solid #373e47;
+      padding-bottom: 8px;
+    }
+    
+    /* ORMD Link Styles */
+    .ormd-link { 
+      padding: 2px 6px; 
+      border-radius: 4px; 
+      text-decoration: underline; 
+      font-weight: 500; 
+    }
+    .ormd-link-supports { 
+      background: #e3f6e3; 
+      color: #217a21; 
+      border: 1px solid #b6e6b6; 
+    }
+    .ormd-link-refutes { 
+      background: #ffeaea; 
+      color: #b80000; 
+      border: 1px solid #ffb3b3; 
+    }
+    .ormd-link-related { 
+      background: #eaf4ff; 
+      color: #1a4d80; 
+      border: 1px solid #b3d1ff; 
+    }
+    .ormd-link-undefined { 
+      background: #f9e6e6; 
+      color: #a94442; 
+      border: 1px solid #e4b9b9; 
+    }
+
+    @media (max-width: 700px) {
+      #sidebar {
+        position: absolute;
+        z-index: 10;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        border-right: 1px solid #373e47;
+      }
+      #main-doc {
+        padding: 24px 2vw;
+      }
+      #collapse-btn {
+        font-size: 1.8em;
+        padding: 8px;
+        margin: 4px;
+      }
+    }
+  </style>
+  <!-- D3.js for document graph -->
+  <script src="https://d3js.org/d3.v7.min.js">renderGraph([{"id": "intro-ref", "rel": "supports", "to": "#introduction"}, {"id": "methodology-ref", "rel": "supports", "to": "#methodology"}, {"id": "results-ref", "rel": "supports", "to": "#results"}, {"id": "external-study", "rel": "related", "to": "https://example.com/related-study"}]);
+</script>
+</head>
+<body>
+  <div id="container">
+    <div id="sidebar" class="collapsed">
+      <button id="collapse-btn" title="Toggle sidebar">☰</button>
+      <nav>
+        <button id="toggle-raw" class="active">👁 Raw .ormd</button>
+        <button id="toggle-graph">🧬 Document Graph</button>
+        <button id="toggle-history">✍️ Change History</button>
+      </nav>
+      <div id="panel-raw" class="panel active">
+        <h3>Raw .ormd</h3>
+        <pre id="raw-content">&lt;!-- ormd:0.1 --&gt;
+---
+title: "ORMD Schema Example: Climate Change Analysis"
+authors:
+  - id: dr.sarah.chen
+    display: Dr. Sarah Chen
+    email: s.chen@marinereserach.org
+    affiliation: Marine Research Institute
+    orcid: 0000-0002-1825-0097
+  - id: prof.james.rodriguez
+    display: Prof. James Rodriguez
+    email: j.rodriguez@university.edu
+    affiliation: Urban Planning Department
+    orcid: 0000-0003-4567-8901
+links:
+  - id: intro-ref
+    rel: supports
+    to: "#introduction"
+  - id: methodology-ref
+    rel: supports
+    to: "#methodology"
+  - id: results-ref
+    rel: supports
+    to: "#results"
+  - id: external-study
+    rel: related
+    to: "https://example.com/related-study"
+
+# Document metadata (replaces +++meta blocks)
+dates:
+  created: "2025-05-29T10:00:00Z"
+  modified: "2025-05-29T14:30:00Z"
+
+metrics:
+  word_count: 1247
+  reading_time: "6 minutes"
+
+permissions:
+  mode: draft
+  editable: true
+  signed: false
+
+# Optional metadata
+version: "1.2"
+status: draft
+description: "A comprehensive analysis examining the multifaceted impacts of climate change on coastal urban areas"
+language: en-US
+license: CC-BY-4.0
+keywords:
+  - climate change
+  - coastal cities
+  - sea-level rise
+  - urban planning
+  - adaptation
+---
+
+# Climate Change Analysis
+
+This document demonstrates the new ORMD front-matter schema where ALL metadata is contained in the YAML front-matter block, eliminating the need for `+++meta` blocks.
+
+## Introduction {#introduction}
+
+The [[intro-ref]] section provides background on climate change impacts. This approach follows the front-matter plan outlined in the design philosophy.
+
+## Methodology {#methodology}
+
+Our [[methodology-ref]] builds upon previous research, including the [[external-study]] which provides additional context.
+
+## Results {#results}
+
+The [[results-ref]] section presents our findings based on the methodology described above.
+
+## Key Benefits of the New Schema
+
+1. **Standard YAML**: All metadata uses standard YAML front-matter that every markdown tool understands
+2. **Organized Structure**: Related metadata is grouped under logical namespaces:
+   - `dates:` for temporal information
+   - `metrics:` for document statistics
+   - `permissions:` for access control
+3. **Human Readable**: Clear field names and validation messages
+4. **Extensible**: Easy to add new optional fields without breaking existing documents
+5. **Tool Friendly**: Standard front-matter works with existing markdown editors
+
+## Schema Validation
+
+The schema enforces:
+- **Required fields**: `title`, `authors`, `links`
+- **Type validation**: Strings, lists, objects, booleans, integers
+- **Format validation**: ISO 8601 dates, ORCID format, enum values
+- **Structure validation**: Nested objects like `dates`, `metrics`, `permissions`
+
+This ensures document consistency and enables reliable tooling. </pre>
+      </div>
+      <div id="panel-graph" class="panel">
+        <h3>Document Graph</h3>
+        <div id="graph-container" style="width:100%;height:400px;"></div>
+      </div>
+      <div id="panel-history" class="panel">
+        <h3>Change History</h3>
+        <div id="history-content"></div>
+      </div>
+    </div>
+    <div id="main-doc">
+      <h1 id="climate-change-analysis">Climate Change Analysis</h1>
+<p>This document demonstrates the new ORMD front-matter schema where ALL metadata is contained in the YAML front-matter block, eliminating the need for <code>+++meta</code> blocks.</p>
+<h2 id="introduction">Introduction</h2>
+<p>The <a href="#introduction" class="ormd-link ormd-link-supports">intro-ref</a> section provides background on climate change impacts. This approach follows the front-matter plan outlined in the design philosophy.</p>
+<h2 id="methodology">Methodology</h2>
+<p>Our <a href="#methodology" class="ormd-link ormd-link-supports">methodology-ref</a> builds upon previous research, including the <a href="https://example.com/related-study" class="ormd-link ormd-link-related">external-study</a> which provides additional context.</p>
+<h2 id="results">Results</h2>
+<p>The <a href="#results" class="ormd-link ormd-link-supports">results-ref</a> section presents our findings based on the methodology described above.</p>
+<h2 id="key-benefits-of-the-new-schema">Key Benefits of the New Schema</h2>
+<ol>
+<li><strong>Standard YAML</strong>: All metadata uses standard YAML front-matter that every markdown tool understands</li>
+<li><strong>Organized Structure</strong>: Related metadata is grouped under logical namespaces:
+   - <code>dates:</code> for temporal information
+   - <code>metrics:</code> for document statistics
+   - <code>permissions:</code> for access control</li>
+<li><strong>Human Readable</strong>: Clear field names and validation messages</li>
+<li><strong>Extensible</strong>: Easy to add new optional fields without breaking existing documents</li>
+<li><strong>Tool Friendly</strong>: Standard front-matter works with existing markdown editors</li>
+</ol>
+<h2 id="schema-validation">Schema Validation</h2>
+<p>The schema enforces:
+- <strong>Required fields</strong>: <code>title</code>, <code>authors</code>, <code>links</code>
+- <strong>Type validation</strong>: Strings, lists, objects, booleans, integers
+- <strong>Format validation</strong>: ISO 8601 dates, ORCID format, enum values
+- <strong>Structure validation</strong>: Nested objects like <code>dates</code>, <code>metrics</code>, <code>permissions</code></p>
+<p>This ensures document consistency and enables reliable tooling.</p>
+    </div>
+  </div>
+  <script>
+    // Sidebar toggle logic
+    const sidebar = document.getElementById('sidebar');
+    const collapseBtn = document.getElementById('collapse-btn');
+    collapseBtn.onclick = () => {
+      sidebar.classList.toggle('collapsed');
+    };
+    
+    // Panel switching logic
+    const panels = ['raw', 'graph', 'history'];
+    let ormdLinksData = null;
+    let graphRendered = false;
+    
+    panels.forEach(name => {
+      document.getElementById('toggle-' + name).onclick = () => {
+        panels.forEach(n => {
+          document.getElementById('toggle-' + n).classList.remove('active');
+          document.getElementById('panel-' + n).classList.remove('active');
+        });
+        document.getElementById('toggle-' + name).classList.add('active');
+        document.getElementById('panel-' + name).classList.add('active');
+        
+        // Render the graph when the graph panel is activated
+        if (name === 'graph' && ormdLinksData && !graphRendered) {
+          const gc = document.getElementById('graph-container');
+          gc.innerHTML = '';
+          renderGraph(ormdLinksData);
+          graphRendered = true;
+        }
+      };
+    });
+    
+    // D3.js graph rendering
+    function renderGraph(links) {
+      ormdLinksData = links;
+      const width = document.getElementById('graph-container').clientWidth;
+      const height = 400;
+      const svg = d3.select('#graph-container').append('svg')
+        .attr('width', width)
+        .attr('height', height);
+        
+      const nodes = links.reduce((acc, l) => {
+        acc.add(l.id);
+        acc.add(l.to);
+        return acc;
+      }, new Set());
+      
+      const nodeData = Array.from(nodes).map(id => ({id}));
+      const linkData = links.map(l => ({source: l.id, target: l.to, rel: l.rel}));
+      
+      const simulation = d3.forceSimulation(nodeData)
+        .force('link', d3.forceLink(linkData).id(d => d.id).distance(80))
+        .force('charge', d3.forceManyBody().strength(-200))
+        .force('center', d3.forceCenter(width/2, height/2));
+        
+      const link = svg.append('g')
+        .attr('stroke', '#999')
+        .attr('stroke-opacity', 0.6)
+        .selectAll('line')
+        .data(linkData)
+        .enter().append('line')
+        .attr('stroke-width', 2);
+        
+      const node = svg.append('g')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1.5)
+        .selectAll('circle')
+        .data(nodeData)
+        .enter().append('circle')
+        .attr('r', 18)
+        .attr('fill', '#1976d2');
+        
+      const label = svg.append('g')
+        .selectAll('text')
+        .data(nodeData)
+        .enter().append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dy', '.35em')
+        .attr('fill', '#fff')
+        .text(d => d.id);
+        
+      simulation.on('tick', () => {
+        link
+          .attr('x1', d => d.source.x)
+          .attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x)
+          .attr('y2', d => d.target.y);
+        node
+          .attr('cx', d => d.x)
+          .attr('cy', d => d.y);
+        label
+          .attr('x', d => d.x)
+          .attr('y', d => d.y);
+      });
+    }
+  renderGraph([{"id": "intro-ref", "rel": "supports", "to": "#introduction"}, {"id": "methodology-ref", "rel": "supports", "to": "#methodology"}, {"id": "results-ref", "rel": "supports", "to": "#results"}, {"id": "external-study", "rel": "related", "to": "https://example.com/related-study"}]);
+</script>
+</body>
+</html>

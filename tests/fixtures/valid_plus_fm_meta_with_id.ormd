@@ -6,11 +6,11 @@ links:
   - id: "link1"
     rel: "related"
     to: "doc2.ormd"
+
+# Migrated custom metadata (previously in +++meta custom_meta)
+custom_meta:
+  info: "This is custom metadata."
+  version: 2
 +++
 
 This is the body.
-
-+++meta custom_meta
-info: "This is custom metadata."
-version: 2
-+++end-meta

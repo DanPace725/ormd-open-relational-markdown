@@ -3,9 +3,11 @@
 title: "Meta Before Body"
 authors: ["Test User"]
 links: []
-+++
-+++meta
-pre_body_info: "This meta appears before the main body text."
-+++end-meta
 
-This is the actual body content.
+# Migrated metadata (previously in +++meta)
+info: "This metadata block appears before any body content."
++++
+
+# Content Section
+
+This is the body content that comes after the metadata block.

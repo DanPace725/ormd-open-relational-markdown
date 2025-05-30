@@ -6,19 +6,18 @@ links:
   - id: "link1"
     rel: "related"
     to: "doc2.ormd"
+
+# Migrated metadata sections (previously in multiple +++meta blocks)
+default_meta:
+  default_info: "Default metadata block"
+
+section2_meta:
+  custom_info: "Metadata for section 2"
+  priority: high
 +++
 
 This is the initial part of the body.
 
-+++meta
-default_info: "Default metadata block"
-+++end-meta
-
 Some more body content.
-
-+++meta section2
-custom_info: "Metadata for section 2"
-priority: high
-+++end-meta
 
 Final part of the body.

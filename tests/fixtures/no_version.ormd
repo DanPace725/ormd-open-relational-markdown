@@ -1,0 +1,9 @@
+---
+title: "Document Without Version Tag"
+authors: ["Test Author"]
+links: []
+---
+
+# Document Without Version Tag
+
+This document is missing the required <!-- ormd:0.1 --> version tag at the beginning. 

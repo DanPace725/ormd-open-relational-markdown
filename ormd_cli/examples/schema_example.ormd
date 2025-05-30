@@ -1,0 +1,92 @@
+<!-- ormd:0.1 -->
+---
+title: "ORMD Schema Example: Climate Change Analysis"
+authors:
+  - id: dr.sarah.chen
+    display: Dr. Sarah Chen
+    email: s.chen@marinereserach.org
+    affiliation: Marine Research Institute
+    orcid: 0000-0002-1825-0097
+  - id: prof.james.rodriguez
+    display: Prof. James Rodriguez
+    email: j.rodriguez@university.edu
+    affiliation: Urban Planning Department
+    orcid: 0000-0003-4567-8901
+links:
+  - id: intro-ref
+    rel: supports
+    to: "#introduction"
+  - id: methodology-ref
+    rel: supports
+    to: "#methodology"
+  - id: results-ref
+    rel: supports
+    to: "#results"
+  - id: external-study
+    rel: related
+    to: "https://example.com/related-study"
+
+# Document metadata (replaces +++meta blocks)
+dates:
+  created: "2025-05-29T10:00:00Z"
+  modified: "2025-05-29T14:30:00Z"
+
+metrics:
+  word_count: 1247
+  reading_time: "6 minutes"
+
+permissions:
+  mode: draft
+  editable: true
+  signed: false
+
+# Optional metadata
+version: "1.2"
+status: draft
+description: "A comprehensive analysis examining the multifaceted impacts of climate change on coastal urban areas"
+language: en-US
+license: CC-BY-4.0
+keywords:
+  - climate change
+  - coastal cities
+  - sea-level rise
+  - urban planning
+  - adaptation
+---
+
+# Climate Change Analysis
+
+This document demonstrates the new ORMD front-matter schema where ALL metadata is contained in the YAML front-matter block, eliminating the need for `+++meta` blocks.
+
+## Introduction {#introduction}
+
+The [[intro-ref]] section provides background on climate change impacts. This approach follows the front-matter plan outlined in the design philosophy.
+
+## Methodology {#methodology}
+
+Our [[methodology-ref]] builds upon previous research, including the [[external-study]] which provides additional context.
+
+## Results {#results}
+
+The [[results-ref]] section presents our findings based on the methodology described above.
+
+## Key Benefits of the New Schema
+
+1. **Standard YAML**: All metadata uses standard YAML front-matter that every markdown tool understands
+2. **Organized Structure**: Related metadata is grouped under logical namespaces:
+   - `dates:` for temporal information
+   - `metrics:` for document statistics
+   - `permissions:` for access control
+3. **Human Readable**: Clear field names and validation messages
+4. **Extensible**: Easy to add new optional fields without breaking existing documents
+5. **Tool Friendly**: Standard front-matter works with existing markdown editors
+
+## Schema Validation
+
+The schema enforces:
+- **Required fields**: `title`, `authors`, `links`
+- **Type validation**: Strings, lists, objects, booleans, integers
+- **Format validation**: ISO 8601 dates, ORCID format, enum values
+- **Structure validation**: Nested objects like `dates`, `metrics`, `permissions`
+
+This ensures document consistency and enables reliable tooling. 

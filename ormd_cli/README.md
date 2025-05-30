@@ -70,7 +70,41 @@ The validator supports the latest ORMD format specifications:
 * **Success:** Exit code `0`
 * **Failure:** Non-zero exit code and printed errors
 
-### 2. Pack
+### 2. Update
+
+Auto-populate and sync front-matter fields in your ORMD documents:
+
+```bash
+ormd-cli update path/to/document.ormd
+```
+
+The update command automatically computes and updates:
+* **`dates.modified`** — Current timestamp in ISO 8601 format
+* **`metrics.word_count`** — Word count of the document body (excluding code blocks)
+* **`metrics.reading_time`** — Estimated reading time based on word count
+* **`link_ids`** — All `[[id]]` references found in the document
+* **`asset_ids`** — All local asset references (images, PDFs, etc.)
+
+**Options:**
+* `--dry-run` — Show what would be updated without making changes
+* `--force-update` — Update even locked fields (ignore `locked: true`)
+* `--verbose` — Show detailed information about changes
+
+**Locking fields:** Add `locked: true` or `locked: ["field_name"]` to prevent updates:
+
+```yaml
+dates:
+  created: "2025-01-01T00:00:00Z"
+  modified: "2025-01-01T00:00:00Z"
+  locked: ["modified"]  # Don't update the modified date
+
+metrics:
+  word_count: 50
+  reading_time: "1 min"
+  locked: true  # Don't update any metrics
+```
+
+### 3. Pack
 
 Bundle a plain `.ormd` and `meta.json` into a single package:
 
@@ -78,7 +112,7 @@ Bundle a plain `.ormd` and `meta.json` into a single package:
 ormd-cli pack content.ormd meta.json --out packaged.ormd
 ```
 
-### 3. Unpack
+### 4. Unpack
 
 Extract a zipped `.ormd` for editing:
 

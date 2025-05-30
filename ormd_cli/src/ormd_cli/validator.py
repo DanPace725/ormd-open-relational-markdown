@@ -5,6 +5,7 @@ import markdown
 from pathlib import Path
 from typing import List, Dict, Any
 from .parser import parse_document
+from .schema import validate_front_matter_schema
 
 class ORMDValidator:
     def __init__(self):
@@ -23,8 +24,8 @@ class ORMDValidator:
             front_matter, body, metadata, parse_errors = parse_document(content)
             self.errors.extend(parse_errors)
             
-            # Validate front-matter structure
-            if not self._validate_front_matter(front_matter):
+            # Validate front-matter structure using schema
+            if not self._validate_front_matter_schema(front_matter):
                 return False
                 
             # Check link references
@@ -44,42 +45,19 @@ class ORMDValidator:
             return False
         return True
     
-    def _validate_front_matter(self, front_matter: Dict[str, Any]) -> bool:
-        """Validate required fields and structure"""
-        if front_matter is None: # Caused by YAML error or other parsing failure
+    def _validate_front_matter_schema(self, front_matter: Dict[str, Any]) -> bool:
+        """Validate front-matter against the official ORMD schema"""
+        if front_matter is None:
             # The error for this (e.g., Invalid YAML) should have been added by the parser.
             return False 
-            
-        # If front_matter is an empty dictionary (e.g. "+++\n+++" was parsed)
-        # it's not None, but it is empty. Check for required fields.
-        required = ['title', 'authors', 'links']
-        all_fields_present = True
-        for field in required:
-            if field not in front_matter:
-                self.errors.append(f"Missing required field: {field}")
-                all_fields_present = False
         
-        if not all_fields_present:
-            return False
-
-        # Validate links structure (only if all required fields were present)
-        links = front_matter.get('links', []) # 'links' is guaranteed now by checks above
-        if not isinstance(links, list):
-            self.errors.append("'links' must be a list")
-            return False
-            
-        for i, link in enumerate(links):
-            if not isinstance(link, dict):
-                self.errors.append(f"Link {i} must be an object")
-                continue
-            if 'id' not in link:
-                self.errors.append(f"Link {i} missing 'id' field")
-            if 'rel' not in link:
-                self.errors.append(f"Link {i} missing 'rel' field")
-            if 'to' not in link:
-                self.errors.append(f"Link {i} missing 'to' field")
+        # Use the schema validator
+        is_valid, schema_errors = validate_front_matter_schema(front_matter)
         
-        return True
+        # Add schema validation errors to our error list
+        self.errors.extend(schema_errors)
+        
+        return is_valid
     
     def _validate_link_references(self, front_matter: Dict[str, Any], body: str) -> bool:
         """Check that all [[link-id]] references exist in links"""

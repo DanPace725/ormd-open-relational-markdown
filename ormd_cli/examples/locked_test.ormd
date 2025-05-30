@@ -1,0 +1,22 @@
+<!-- ormd:0.1 -->
+---
+title: "Locked Fields Test"
+authors: ["Test Author"]
+links: []
+dates:
+  created: "2025-01-01T00:00:00Z"
+  modified: "2025-01-01T00:00:00Z"
+  locked: ["modified"]  # Don't update the modified date
+metrics:
+  word_count: 50
+  reading_time: "1 min"
+  locked: true  # Don't update any metrics
+---
+
+# Test Document with Locked Fields
+
+This document has some locked fields that should not be updated by the update command.
+
+We have many more words here to test if the word count gets updated despite being locked. This paragraph has quite a few words to make the count significantly higher than the locked value of 50.
+
+There are also some [[test-link]] references and ![image](assets/test.png) assets that should still be detected and updated since those fields are not locked. 

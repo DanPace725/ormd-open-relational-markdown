@@ -3,11 +3,8 @@
 title: "Meta Content Has Delimiters"
 authors: ["Test User"]
 links: []
-+++
 
-This is the body.
-
-+++meta
+# Migrated metadata with delimiter content (previously in +++meta)
 config: |
   key1: value1
   ---
@@ -15,4 +12,6 @@ config: |
   +++
   extra_stuff: "more values"
 notes: "Metadata can contain --- and +++ as part of its content."
-+++end-meta
++++
+
+This is the body.

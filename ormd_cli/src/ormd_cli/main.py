@@ -2,6 +2,7 @@
 import click
 from .validator import ORMDValidator
 from .packager import ORMDPackager
+from .updater import ORMDUpdater
 import markdown
 import yaml
 from pathlib import Path
@@ -84,6 +85,48 @@ def unpack(package_file, out_dir, overwrite):
                 click.echo(f"  • {file.name}")
     else:
         click.echo(f"❌ Failed to unpack {package_file}")
+        exit(1)
+
+@cli.command()
+@click.argument('file_path')
+@click.option('--dry-run', '-n', is_flag=True, help='Show what would be updated without making changes')
+@click.option('--force-update', '-f', is_flag=True, help='Update locked fields (ignore locked: true)')
+@click.option('--verbose', '-v', is_flag=True, help='Show detailed update information')
+def update(file_path, dry_run, force_update, verbose):
+    """Update and sync front-matter fields (date_modified, word_count, link_ids, asset_ids)"""
+    updater = ORMDUpdater()
+    
+    try:
+        result = updater.update_file(
+            file_path, 
+            dry_run=dry_run, 
+            force_update=force_update, 
+            verbose=verbose
+        )
+        
+        if dry_run:
+            if result['changes']:
+                click.echo(f"🔍 Would update {file_path}:")
+                for field, change in result['changes'].items():
+                    old_val = change.get('old', 'None')
+                    new_val = change.get('new')
+                    click.echo(f"  • {field}: {old_val} → {new_val}")
+            else:
+                click.echo(f"✅ {file_path} is already up to date")
+        else:
+            if result['updated']:
+                click.echo(f"✅ Updated {file_path}")
+                if verbose and result['changes']:
+                    click.echo("Changes made:")
+                    for field, change in result['changes'].items():
+                        old_val = change.get('old', 'None')
+                        new_val = change.get('new')
+                        click.echo(f"  • {field}: {old_val} → {new_val}")
+            else:
+                click.echo(f"✅ {file_path} is already up to date")
+                
+    except Exception as e:
+        click.echo(f"❌ Failed to update {file_path}: {str(e)}")
         exit(1)
 
 @cli.command()

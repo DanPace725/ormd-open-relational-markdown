@@ -6,11 +6,10 @@ links:
   - id: "link1"
     rel: "related"
     to: "doc2.ormd"
+
+# Migrated metadata (previously in +++meta blocks)
+some_key: some_value
+another_key: 123
 +++
 
 This is the body.
-
-+++meta
-some_key: some_value
-another_key: 123
-+++end-meta

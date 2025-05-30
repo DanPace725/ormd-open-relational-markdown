@@ -1,0 +1,59 @@
+<!-- ormd:0.1 -->
+---
+title: Update Test Document
+authors:
+- Test Author
+links:
+- id: intro
+  rel: supports
+  to: '#introduction'
+- id: methodology
+  rel: supports
+  to: '#methodology'
+dates:
+  created: '2025-05-30T04:52:18.744656Z'
+  modified: '2025-05-30T04:52:18.744718Z'
+metrics:
+  word_count: 135
+  reading_time: 1 min
+link_ids:
+- intro
+- methodology
+asset_ids:
+- assets/climate-chart.png
+- assets/data-viz.svg
+- assets/report.pdf
+---
+
+# Introduction
+
+This is a test document for the [[intro]] section that references other sections like [[methodology]].
+
+## Methodology
+
+Here we have some methodology content that includes:
+
+- A reference to an image: ![Climate Chart](assets/climate-chart.png)
+- A reference to a PDF: [Report](assets/report.pdf)
+- Some code blocks that should be excluded from word count:
+
+```python
+def hello_world():
+    print("Hello, world!")
+```
+
+And here's some `inline code` that should also be excluded.
+
+## Results
+
+The results show interesting patterns. We also reference [[intro]] again here, and mention another asset: ![Data Visualization](assets/data-viz.svg).
+
+This document has multiple paragraphs to test word counting. Each paragraph contains several words that should be counted properly when calculating the total word count.
+
+## Conclusion
+
+In conclusion, this document tests:
+1. Link ID extraction ([[intro]], [[methodology]])
+2. Asset ID extraction (assets/climate-chart.png, assets/report.pdf, assets/data-viz.svg)
+3. Word counting (excluding code blocks and inline code)
+4. Timestamp generation for dates.modified 
