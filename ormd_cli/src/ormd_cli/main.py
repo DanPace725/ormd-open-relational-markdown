@@ -6,8 +6,10 @@ import markdown
 import yaml
 from pathlib import Path
 from .utils import HTML_TEMPLATE
+from .parser import parse_document
 import zipfile
 import json
+import re
 
 @click.group()
 def cli():
@@ -84,27 +86,6 @@ def unpack(package_file, out_dir, overwrite):
         click.echo(f"❌ Failed to unpack {package_file}")
         exit(1)
 
-def parse_ormd_content(content: str):
-    """Parse ORMD content string into (front_matter, body)."""
-    import yaml
-    import re
-    # Remove version tag if present
-    content = content.strip()
-    if content.startswith('<!-- ormd:0.1 -->'):
-        content = content.split('-->', 1)[-1].lstrip()
-    # Look for YAML front-matter
-    if content.startswith('---\n'):
-        parts = content.split('---\n', 2)
-        if len(parts) >= 3:
-            try:
-                front_matter = yaml.safe_load(parts[1])
-                body = parts[2]
-                return front_matter, body
-            except Exception:
-                pass  # fall through to error
-    # If parsing fails, return empty front_matter and all content as body
-    return {"links": []}, content
-
 @cli.command()
 @click.argument('input_file')
 @click.option('--out', '-o', default=None, help='Output HTML file')
@@ -120,6 +101,7 @@ def render(input_file, out):
     links = []
     front_matter = {}
     body = ''
+    metadata = None
 
     if is_zip:
         with zipfile.ZipFile(input_file, 'r') as zf:
@@ -130,13 +112,12 @@ def render(input_file, out):
     else:
         raw_ormd = Path(input_file).read_text(encoding='utf-8')
 
-    # Unified parsing for both file and package
-    front_matter, body = parse_ormd_content(raw_ormd)
-    title = front_matter.get('title', title)
-    links = front_matter.get('links', [])
+    # Unified parsing for both file and package using the shared parser
+    front_matter, body, metadata, parse_errors = parse_document(raw_ormd)
+    title = front_matter.get('title', title) if front_matter else title
+    links = front_matter.get('links', []) if front_matter else []
 
     # --- Semantic link rendering ---
-    import re
     def replace_link(match):
         link_id = match.group(1)
         link = next((l for l in links if l.get('id') == link_id), None)
@@ -144,9 +125,9 @@ def render(input_file, out):
             rel = link.get('rel', 'related')
             to = link.get('to', f'#{link_id}')
             label = link_id
-            return f'<a href="{to}" class="ormd-link ormd-link-{rel}">[[{label}]]</a>'
+            return f'<a href="{to}" class="ormd-link ormd-link-{rel}">{label}</a>'
         else:
-            return f'<span class="ormd-link ormd-link-undefined">[[{link_id}]]</span>'
+            return f'<span class="ormd-link ormd-link-undefined">{link_id}</span>'
     body = re.sub(r'\[\[([^\]]+)\]\]', replace_link, body)
     # --- End semantic link rendering ---
 
@@ -184,7 +165,12 @@ def render(input_file, out):
 
     # Insert links data for D3.js graph (as a JS variable)
     links_json = json.dumps(links)
-    html = re.sub(r'(// renderGraph\(\[\{id: \'g1\', rel: \'supports\', to: \'#goal\'\}\]\);)', f'renderGraph({links_json});', html)
+    # Replace any '// renderGraph(...);' line with the actual call
+    new_html, n = re.subn(r'// renderGraph\(.*\);', f'renderGraph({links_json});', html)
+    if n == 0:
+        # If no placeholder was found, append the call at the end of the script
+        new_html = html.replace('</script>', f'renderGraph({links_json});\n</script>')
+    html = new_html
 
     # Determine output path
     if out is None:

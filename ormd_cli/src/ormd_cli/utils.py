@@ -44,6 +44,8 @@ HTML_TEMPLATE = '''
     }};
     // Panel switching logic
     const panels = ['raw', 'graph', 'history'];
+    let ormdLinksData = null; // Will be set by renderGraph injection
+    let graphRendered = false;
     panels.forEach(name => {{
       document.getElementById('toggle-' + name).onclick = () => {{
         panels.forEach(n => {{
@@ -52,10 +54,19 @@ HTML_TEMPLATE = '''
         }});
         document.getElementById('toggle-' + name).classList.add('active');
         document.getElementById('panel-' + name).classList.add('active');
+        // Render the graph when the graph panel is activated
+        if (name === 'graph' && ormdLinksData && !graphRendered) {{
+          // Clear previous SVG if any
+          const gc = document.getElementById('graph-container');
+          gc.innerHTML = '';
+          renderGraph(ormdLinksData);
+          graphRendered = true;
+        }}
       }};
     }});
     // D3.js graph rendering placeholder
     function renderGraph(links) {{
+      ormdLinksData = links; // Store globally for panel switching
       const width = document.getElementById('graph-container').clientWidth;
       const height = 400;
       const svg = d3.select('#graph-container').append('svg')
@@ -111,8 +122,7 @@ HTML_TEMPLATE = '''
           .attr('y', d => d.y);
       }});
     }}
-    // Example usage: replace with actual links from YAML
-    // renderGraph([{{id: 'g1', rel: 'supports', to: '#goal'}}]);
+    // renderGraph();
   </script>
 </body>
 </html>

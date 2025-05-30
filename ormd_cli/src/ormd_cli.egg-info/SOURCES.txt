@@ -3,6 +3,7 @@ pyproject.toml
 src/ormd_cli/__init__.py
 src/ormd_cli/main.py
 src/ormd_cli/packager.py
+src/ormd_cli/parser.py
 src/ormd_cli/utils.py
 src/ormd_cli/validator.py
 src/ormd_cli.egg-info/PKG-INFO
