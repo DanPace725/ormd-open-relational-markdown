@@ -31,10 +31,10 @@ asset_ids: []
         *   Name the extension `ormd-vscode`.
         *   Use `ormd-vscode` as the identifier.
         *   Provide a brief description: "VSCode support for Open Relational Markdown (ORMD)".
-        *   Initialize a Git repository if prompted and not already part of a larger mono-repo strategy.
+
         *   Choose your preferred bundler (webpack is a common choice, but `unbundled` is fine to start).
         *   Choose `npm` or `yarn` as the package manager, consistent with the main project if applicable.
-    *   This new `ormd-vscode` directory should reside at the top level of the `ormd` workspace, alongside existing directories like `ormd/` and `ormd/ormd_cli/`.
+    *   This new `ormd-vscode` directory should reside at alongside existing directorie`ormd/ormd_cli/`.
 
 2.  **Initial Project Configuration & Verification:**
     *   Open the newly created `ormd-vscode` project in a VSCode instance.
