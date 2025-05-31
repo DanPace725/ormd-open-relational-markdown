@@ -1,0 +1,32 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ORMD",
+  "scopeName": "source.ormd",
+  "patterns": [
+    {
+      "include": "#frontmatter"
+    },
+    {
+      "include": "#ormd-links"
+    },
+    {
+      "include": "text.html.markdown"
+    }
+  ],
+  "repository": {
+    "frontmatter": {
+      "name": "meta.embedded.block.frontmatter.yaml",
+      "begin": "^---$",
+      "end": "^---$",
+      "patterns": [
+        {
+          "include": "source.yaml"
+        }
+      ]
+    },
+    "ormd-links": {
+      "name": "markup.underline.link.ormd",
+      "match": "\\[\\[([^\\]]+)\\]\\]"
+    }
+  }
+}

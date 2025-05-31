@@ -1,0 +1,56 @@
+{
+  "name": "ormd-vscode",
+  "displayName": "ormd-vscode",
+  "description": "VSCode support for Open Relational Markdown (ORMD)",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:ormd"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "ormd",
+        "aliases": [
+          "Open Relational Markdown",
+          "ormd"
+        ],
+        "extensions": [
+          ".ormd"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ormd",
+        "scopeName": "source.ormd",
+        "path": "./syntaxes/ormd.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "20.x",
+    "eslint": "^8.57.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.3.0",
+    "typescript": "^5.4.5",
+    "@typescript-eslint/parser": "^7.7.1",
+    "@typescript-eslint/eslint-plugin": "^7.7.1"
+  }
+}

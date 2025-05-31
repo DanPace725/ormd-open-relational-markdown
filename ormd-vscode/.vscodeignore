@@ -1,0 +1,26 @@
+.vscode/**
+.vscode-test/**
+.DS_Store
+*.vsix
+node_modules/
+out/test/
+src/
+tsconfig.json
+yarn.lock
+npm-debug.log*
+*.sample.ormd
+*.test.ormd
+
+# Folders
+images/
+test-fixtures/
+
+# Files
+.eslintrc.json
+ormd-vscode.code-workspace
+**/webpack.config.js
+.gitattributes
+.editorconfig
+.eslintignore
+.prettierrc.js
+.prettierignore
