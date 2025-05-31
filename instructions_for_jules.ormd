@@ -1,0 +1,120 @@
+<!-- ormd:0.1 -->
+
+---
+title: Instructions for Jules
+authors: []
+links: []
+dates:
+  created: '2025-05-31T22:37:59.077944Z'
+  modified: '2025-05-31T22:37:59.077957Z'
+metrics:
+  word_count: 818
+  reading_time: 4 min
+link_ids:
+- link-id
+asset_ids: []
+---
+
+
+# Instructions for Jules
+
+
+**Goal:** Initiate the development of a VSCode extension for ORMD, focusing on basic language support and project setup.
+
+**Phase 1: Project Initialization and Core Logic Assessment**
+
+1.  **Scaffold New VSCode Extension Project:**
+    *   Navigate to the root directory of the `ormd` workspace.
+    *   Use the Yeoman VSCode extension generator (`yo code`) to create a new extension project.
+    *   When prompted:
+        *   Select "New Extension (TypeScript)".
+        *   Name the extension `ormd-vscode`.
+        *   Use `ormd-vscode` as the identifier.
+        *   Provide a brief description: "VSCode support for Open Relational Markdown (ORMD)".
+        *   Initialize a Git repository if prompted and not already part of a larger mono-repo strategy.
+        *   Choose your preferred bundler (webpack is a common choice, but `unbundled` is fine to start).
+        *   Choose `npm` or `yarn` as the package manager, consistent with the main project if applicable.
+    *   This new `ormd-vscode` directory should reside at the top level of the `ormd` workspace, alongside existing directories like `ormd/` and `ormd/ormd_cli/`.
+
+2.  **Initial Project Configuration & Verification:**
+    *   Open the newly created `ormd-vscode` project in a VSCode instance.
+    *   Familiarize yourself with the generated project structure, particularly `package.json` and `src/extension.ts`.
+    *   Verify that you can launch the Extension Development Host window by pressing F5 (or through the Debug panel). The default "Hello World" command should be available.
+
+3.  **Analyze Existing ORMD CLI for Reusable Components:**
+    *   Thoroughly examine the `ormd/ormd_cli/src/ormd_cli/` directory.
+    *   Identify the core modules responsible for:
+        *   Parsing `.ormd` files (including front-matter and body).
+        *   Validating ORMD documents against the specification.
+        *   Rendering ORMD to HTML (if this logic is intended for a live preview feature).
+        *   Updating metadata (e.g., `word_count`, `date_modified`).
+    *   Document the key functions/classes, their inputs, outputs, and any dependencies.
+    *   Assess how easily these components can be decoupled from the CLI-specific code (e.g., Click argument parsing) to be used as a library.
+
+**Phase 2: Basic Language Support Setup**
+
+4.  **Define ORMD Language Contribution:**
+    *   In `ormd-vscode/package.json`, locate the `contributes` section.
+    *   Add a `languages` contribution point to officially declare "ormd" as a new language.
+    *   Specify:
+        *   `id`: "ormd"
+        *   `aliases`: ["Open Relational Markdown", "ormd"]
+        *   `extensions`: [".ormd"]
+        *   `configuration`: "./language-configuration.json" (you will create this file next).
+
+5.  **Create Language Configuration File:**
+    *   In the `ormd-vscode` root directory, create `language-configuration.json`.
+    *   Define basic language features such as:
+        *   `comments`: Specify block and line comment syntax if ORMD has them (e.g., markdown uses `<!-- -->`).
+        *   `brackets`: Define standard bracket pairs (`[]`, `()`, `{}`).
+        *   `autoClosingPairs`: Configure auto-closing for defined brackets and quotes.
+        *   `surroundingPairs`: Define pairs for selection surrounding.
+        *   Refer to VSCode documentation for the full schema of `language-configuration.json`.
+
+6.  **Plan for Syntax Highlighting (TextMate Grammar):**
+    *   Still in `ormd-vscode/package.json` under `contributes`, add a `grammars` contribution point.
+    *   Specify:
+        *   `language`: "ormd" (matching the ID from the `languages` contribution).
+        *   `scopeName`: "source.ormd" (a conventional scope name).
+        *   `path`: "./syntaxes/ormd.tmLanguage.json" (you will create this directory and file).
+    *   Create the directory `ormd-vscode/syntaxes/`.
+    *   Inside `ormd-vscode/syntaxes/`, create an initial `ormd.tmLanguage.json` file.
+    *   **Task for the AI:** Research the TextMate grammar syntax. Your initial goal for this grammar is to differentiate:
+        *   YAML front-matter block (between `---` delimiters).
+        *   Standard Markdown content.
+        *   ORMD specific link syntax (e.g., `[[link-id]]`).
+        *   Basic Markdown elements (headers, lists, bold, italics) can be included if straightforward, or you can plan to leverage existing Markdown grammars.
+    *   This will be an iterative process. Start with the major distinct parts of an ORMD document.
+
+7.  **Configure Extension Activation:**
+    *   In `ormd-vscode/package.json`, review the `activationEvents` array.
+    *   Ensure it includes `onLanguage:ormd`. This will activate your extension when an `.ormd` file is opened.
+    *   You can remove the default "onCommand" activation if the "Hello World" command is no longer primary.
+    *   In `ormd-vscode/src/extension.ts`:
+        *   Modify the `activate` function. For now, it can simply log a message to the console indicating that the ORMD extension has been activated.
+        *   Clean up any default "Hello World" command registration if it's not immediately needed.
+
+**Phase 3: Development Workflow and Next Steps Planning**
+
+8.  **Verify Basic Setup:**
+    *   Compile the extension (usually `npm run compile` or `yarn compile`).
+    *   Launch the Extension Development Host (F5).
+    *   Create or open an `.ormd` file.
+    *   **Check:**
+        *   The language mode in the bottom-right of VSCode should indicate "ormd".
+        *   The console message from your `activate` function should appear (View > Output, then select your extension's channel from the dropdown, or check the Debug Console).
+        *   Any initial syntax highlighting you've defined should be visible.
+        *   Basic language configurations (like comment toggling, if defined) should work.
+
+9.  **Commit Initial Structure:**
+    *   Stage and commit all the new files and modifications within the `ormd-vscode` directory to a new branch (e.g., `feature/vscode-extension-init`).
+
+10. **Outline Next Steps for Asynchronous Work:**
+    *   Document the current status of the extension.
+    *   Create a list of immediate next tasks. This should include:
+        *   Refining the TextMate grammar for more comprehensive syntax highlighting.
+        *   Planning the integration of the ORMD validator (from the CLI) to provide diagnostics (errors/warnings) in the editor.
+        *   Designing how to expose core ORMD CLI commands (e.g., `validate`, `pack`, `render`) through the VSCode command palette.
+        *   Investigating the use of a Language Server Protocol (LSP) if more advanced features (like IntelliSense based on document content, go-to-definition for links) are planned, or if the core logic is complex.
+
+This set of instructions should give the AI agent a solid foundation to start building the ORMD VSCode extension. The emphasis is on setting up the project correctly and planning the integration with your existing ORMD logic.
