@@ -1,0 +1,13 @@
+<!-- ormd:0.1 -->
+---
+title: "Document with Unknown Fields"
+authors: ["Test Author"]
+links: []
+custom_field: "This should not be allowed"
+experimental_feature: 123
+deprecated_field: true
+---
+
+# Test Document
+
+This document has unknown fields that should be rejected in Phase 1. 

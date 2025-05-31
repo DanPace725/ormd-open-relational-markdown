@@ -281,3 +281,50 @@ HTML_TEMPLATE = '''
 </body>
 </html>
 '''
+
+import sys
+import locale
+
+def get_symbols():
+    """
+    Get appropriate symbols for the current terminal/platform.
+    Returns Unicode symbols if supported, ASCII fallbacks otherwise.
+    """
+    # Check if we can safely use Unicode symbols
+    can_use_unicode = True
+    
+    try:
+        # Test if we can encode Unicode symbols with current stdout encoding
+        test_symbols = "✅❌⚠️"
+        if hasattr(sys.stdout, 'encoding') and sys.stdout.encoding:
+            test_symbols.encode(sys.stdout.encoding)
+        else:
+            # Fallback to locale encoding
+            test_symbols.encode(locale.getpreferredencoding())
+    except (UnicodeEncodeError, LookupError):
+        can_use_unicode = False
+    
+    # Also check for known problematic encodings
+    encoding = getattr(sys.stdout, 'encoding', '').lower()
+    if encoding in ('cp1252', 'ascii', 'latin-1'):
+        can_use_unicode = False
+    
+    if can_use_unicode:
+        return {
+            'success': '✅',
+            'error': '❌', 
+            'warning': '⚠️',
+            'info': '🔍',
+            'bullet': '•'
+        }
+    else:
+        return {
+            'success': '[OK]',
+            'error': '[ERROR]',
+            'warning': '[WARN]',
+            'info': '[INFO]',
+            'bullet': '*'
+        }
+
+# Global symbols instance
+SYMBOLS = get_symbols()

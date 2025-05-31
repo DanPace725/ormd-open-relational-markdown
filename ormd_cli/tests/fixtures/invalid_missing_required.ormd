@@ -1,0 +1,9 @@
+<!-- ormd:0.1 -->
+---
+description: "This file is missing title, authors, and links"
+version: "1.0"
+---
+
+# Test Document
+
+This document is missing the required front-matter fields and should fail validation. 

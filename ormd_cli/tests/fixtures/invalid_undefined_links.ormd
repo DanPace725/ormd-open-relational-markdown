@@ -1,0 +1,19 @@
+<!-- ormd:0.1 -->
+---
+title: "Document with Undefined Links"
+authors: ["Test Author"]
+links:
+  - id: "defined-link"
+    rel: "supports"
+    to: "#section1"
+---
+
+# Test Document
+
+This document references [[defined-link]] which is properly defined.
+
+But it also references [[undefined-link]] and [[another-undefined]] which are not defined in the links section.
+
+## Section 1
+
+More content with [[yet-another-undefined]] reference. 

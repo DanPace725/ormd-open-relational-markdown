@@ -4,8 +4,8 @@ title: "Valid Empty Meta"
 authors: ["Test User"]
 links: []
 
-# Empty metadata section (previously empty +++meta)
-empty_meta: {}
+# Empty metadata section (previously empty +++meta) - now using valid optional field
+status: "draft"
 +++
 
 This is the body with an empty metadata block.

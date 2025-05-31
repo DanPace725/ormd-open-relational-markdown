@@ -66,7 +66,7 @@ def test_valid_empty_fm():
     # This should fail because empty front-matter lacks required fields
     result = validator.validate_file('../tests/fixtures/valid_empty_fm.ormd')
     assert not result
-    assert any("Missing required field" in error for error in validator.errors)
+    assert any("No front-matter found" in error for error in validator.errors)
 
 def test_valid_empty_meta():
     """Test files with empty metadata sections in front-matter."""

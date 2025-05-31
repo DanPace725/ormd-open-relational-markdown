@@ -4,6 +4,6 @@ title: "Meta Only No Body"
 authors: ["Test User"]
 links: []
 
-# Migrated metadata (previously in +++meta)
-info: "Document consists of front-matter and this metadata block only."
+# Migrated metadata (previously in +++meta) - now using valid fields
+description: "Document consists of front-matter and this metadata block only."
 +++

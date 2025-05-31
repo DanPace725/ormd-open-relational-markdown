@@ -6,7 +6,7 @@ from .updater import ORMDUpdater
 import markdown
 import yaml
 from pathlib import Path
-from .utils import HTML_TEMPLATE
+from .utils import HTML_TEMPLATE, SYMBOLS
 from .parser import parse_document
 import zipfile
 import json
@@ -21,18 +21,29 @@ def cli():
 @click.argument('file_path')
 @click.option('--verbose', '-v', is_flag=True, help='Show detailed validation info')
 def validate(file_path, verbose):
-    """Validate an ORMD file against the 0.1 specification"""
+    """Validate an ORMD file against the 0.1 specification with comprehensive Phase 1 checks"""
     validator = ORMDValidator()
     
-    if validator.validate_file(file_path):
-        click.echo(f"✅ {file_path} is valid ORMD 0.1")
-        return
+    is_valid = validator.validate_file(file_path)
     
-    click.echo(f"❌ {file_path} failed validation:")
-    for error in validator.errors:
-        click.echo(f"  • {error}")
+    if verbose or not is_valid:
+        # Show detailed validation summary
+        click.echo(validator.get_validation_summary())
+    else:
+        # Show simple success message
+        if is_valid and not validator.warnings:
+            click.echo(f"{SYMBOLS['success']} {file_path} is valid ORMD 0.1")
+        elif is_valid and validator.warnings:
+            click.echo(f"{SYMBOLS['success']} {file_path} is valid ORMD 0.1 (with {len(validator.warnings)} warning(s))")
+            if not verbose:
+                click.echo("Use --verbose to see warnings")
     
-    exit(1)
+    # Always show warnings even in non-verbose mode if validation passes
+    if is_valid and validator.warnings and not verbose:
+        click.echo(f"{SYMBOLS['warning']}  {len(validator.warnings)} warning(s) - use --verbose for details")
+    
+    if not is_valid:
+        exit(1)
 
 @cli.command()
 @click.argument('content_file')
@@ -46,17 +57,17 @@ def pack(content_file, meta_file, out, validate):
     if validate:
         validator = ORMDValidator()
         if not validator.validate_file(content_file):
-            click.echo(f"❌ Content file failed validation:")
+            click.echo(f"{SYMBOLS['error']} Content file failed validation:")
             for error in validator.errors:
-                click.echo(f"  • {error}")
+                click.echo(f"  {SYMBOLS['bullet']} {error}")
             click.echo("Use --no-validate to skip validation")
             exit(1)
     
     packager = ORMDPackager()
     if packager.pack(content_file, meta_file, out):
-        click.echo(f"✅ Created package: {out}")
+        click.echo(f"{SYMBOLS['success']} Created package: {out}")
     else:
-        click.echo(f"❌ Failed to create package")
+        click.echo(f"{SYMBOLS['error']} Failed to create package")
         exit(1)
 
 @cli.command()
@@ -70,21 +81,21 @@ def unpack(package_file, out_dir, overwrite):
     # Check if output directory exists and has files
     out_path = Path(out_dir)
     if out_path.exists() and any(out_path.iterdir()) and not overwrite:
-        click.echo(f"❌ Directory {out_dir} is not empty. Use --overwrite to force.")
+        click.echo(f"{SYMBOLS['error']} Directory {out_dir} is not empty. Use --overwrite to force.")
         exit(1)
     
     packager = ORMDPackager()
     if packager.unpack(package_file, out_dir):
-        click.echo(f"✅ Unpacked to: {out_dir}")
+        click.echo(f"{SYMBOLS['success']} Unpacked to: {out_dir}")
         
         # Show what was extracted
         if out_path.exists():
             files = list(out_path.iterdir())
             click.echo("Files extracted:")
             for file in sorted(files):
-                click.echo(f"  • {file.name}")
+                click.echo(f"  {SYMBOLS['bullet']} {file.name}")
     else:
-        click.echo(f"❌ Failed to unpack {package_file}")
+        click.echo(f"{SYMBOLS['error']} Failed to unpack {package_file}")
         exit(1)
 
 @cli.command()
@@ -106,27 +117,27 @@ def update(file_path, dry_run, force_update, verbose):
         
         if dry_run:
             if result['changes']:
-                click.echo(f"🔍 Would update {file_path}:")
+                click.echo(f"{SYMBOLS['info']} Would update {file_path}:")
                 for field, change in result['changes'].items():
                     old_val = change.get('old', 'None')
                     new_val = change.get('new')
-                    click.echo(f"  • {field}: {old_val} → {new_val}")
+                    click.echo(f"  {SYMBOLS['bullet']} {field}: {old_val} → {new_val}")
             else:
-                click.echo(f"✅ {file_path} is already up to date")
+                click.echo(f"{SYMBOLS['success']} {file_path} is already up to date")
         else:
             if result['updated']:
-                click.echo(f"✅ Updated {file_path}")
+                click.echo(f"{SYMBOLS['success']} Updated {file_path}")
                 if verbose and result['changes']:
                     click.echo("Changes made:")
                     for field, change in result['changes'].items():
                         old_val = change.get('old', 'None')
                         new_val = change.get('new')
-                        click.echo(f"  • {field}: {old_val} → {new_val}")
+                        click.echo(f"  {SYMBOLS['bullet']} {field}: {old_val} → {new_val}")
             else:
-                click.echo(f"✅ {file_path} is already up to date")
+                click.echo(f"{SYMBOLS['success']} {file_path} is already up to date")
                 
     except Exception as e:
-        click.echo(f"❌ Failed to update {file_path}: {str(e)}")
+        click.echo(f"{SYMBOLS['error']} Failed to update {file_path}: {str(e)}")
         exit(1)
 
 @cli.command()

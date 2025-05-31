@@ -4,14 +4,14 @@ title: "Meta Content Has Delimiters"
 authors: ["Test User"]
 links: []
 
-# Migrated metadata with delimiter content (previously in +++meta)
-config: |
-  key1: value1
+# Migrated metadata with delimiter content (previously in +++meta) - now using valid fields
+description: |
+  This document contains delimiters in its content:
   ---
-  key2: value2
+  Some content here
   +++
-  extra_stuff: "more values"
-notes: "Metadata can contain --- and +++ as part of its content."
+  More content
+keywords: ["delimiters", "content", "metadata"]
 +++
 
 This is the body.

@@ -4,8 +4,8 @@ title: "Meta Before Body"
 authors: ["Test User"]
 links: []
 
-# Migrated metadata (previously in +++meta)
-info: "This metadata block appears before any body content."
+# Migrated metadata (previously in +++meta) - now using valid fields
+description: "This metadata block appears before any body content."
 +++
 
 # Content Section

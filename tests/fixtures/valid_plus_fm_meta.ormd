@@ -7,9 +7,9 @@ links:
     rel: "related"
     to: "doc2.ormd"
 
-# Migrated metadata (previously in +++meta blocks)
-some_key: some_value
-another_key: 123
+# Migrated metadata (previously in +++meta blocks) - now using valid fields
+version: "1.0"
+description: "Migrated from meta blocks"
 +++
 
 This is the body.

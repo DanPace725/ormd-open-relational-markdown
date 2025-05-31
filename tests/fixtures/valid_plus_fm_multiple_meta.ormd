@@ -7,13 +7,14 @@ links:
     rel: "related"
     to: "doc2.ormd"
 
-# Migrated metadata sections (previously in multiple +++meta blocks)
-default_meta:
-  default_info: "Default metadata block"
+# Migrated metadata sections (previously in multiple +++meta blocks) - now using valid fields
+metrics:
+  word_count: 42
+  reading_time: "1 min"
 
-section2_meta:
-  custom_info: "Metadata for section 2"
-  priority: high
+permissions:
+  mode: "published"
+  editable: false
 +++
 
 This is the initial part of the body.

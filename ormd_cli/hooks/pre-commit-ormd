@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+"""
+Pre-commit hook for ORMD file validation.
+
+This hook validates all staged .ormd files using the ORMD CLI validator
+and blocks commits if any validation errors are found.
+
+Installation:
+    1. Copy this file to .git/hooks/pre-commit
+    2. Make it executable: chmod +x .git/hooks/pre-commit
+    
+Or use the setup script: python hooks/setup_hooks.py
+"""
+
+import sys
+import subprocess
+from pathlib import Path
+import os
+
+
+def get_staged_ormd_files():
+    """Get list of staged .ormd files."""
+    try:
+        # Get all staged files
+        result = subprocess.run(
+            ['git', 'diff', '--cached', '--name-only'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        # Filter for .ormd files
+        staged_files = result.stdout.strip().split('\n')
+        ormd_files = [f for f in staged_files if f.endswith('.ormd')]
+        
+        # Filter for files that actually exist (not deleted)
+        existing_files = []
+        for f in ormd_files:
+            if Path(f).exists():
+                existing_files.append(f)
+        
+        return existing_files
+        
+    except subprocess.CalledProcessError:
+        print("Error: Could not get staged files from git", file=sys.stderr)
+        return []
+
+
+def find_ormd_cli():
+    """Find the ORMD CLI module path."""
+    # Try common locations
+    possible_paths = [
+        'ormd_cli/src/ormd_cli/main.py',  # From repo root
+        'src/ormd_cli/main.py',           # From ormd_cli directory
+        'ormd_cli/main.py',               # Direct location
+    ]
+    
+    for path in possible_paths:
+        if Path(path).exists():
+            return str(Path(path).parent)
+    
+    # Try finding it in Python path
+    try:
+        result = subprocess.run(
+            [sys.executable, '-c', 'import ormd_cli; print(ormd_cli.__file__)'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        module_path = Path(result.stdout.strip()).parent
+        return str(module_path)
+    except subprocess.CalledProcessError:
+        pass
+    
+    return None
+
+
+def validate_ormd_file(file_path, ormd_cli_path=None):
+    """Validate a single ORMD file using the CLI validator."""
+    if ormd_cli_path:
+        # Use local development version
+        cmd = [sys.executable, '-m', 'ormd_cli.main', 'validate', file_path]
+        cwd = Path(ormd_cli_path).parent
+    else:
+        # Try using installed version
+        cmd = ['ormd', 'validate', file_path]
+        cwd = None
+    
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=cwd
+        )
+        
+        return {
+            'success': result.returncode == 0,
+            'output': result.stdout,
+            'error': result.stderr
+        }
+        
+    except FileNotFoundError:
+        # Fall back to Python module execution
+        try:
+            cmd = [sys.executable, '-c', f'''
+import sys
+sys.path.insert(0, "{ormd_cli_path or "."}")
+from ormd_cli.main import cli
+sys.argv = ["ormd", "validate", "{file_path}"]
+cli()
+''']
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            return {
+                'success': result.returncode == 0,
+                'output': result.stdout,
+                'error': result.stderr
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'output': '',
+                'error': f'Could not run ORMD validator: {e}'
+            }
+
+
+def main():
+    """Main pre-commit hook function."""
+    print("🔍 Checking staged ORMD files...")
+    
+    # Get staged .ormd files
+    ormd_files = get_staged_ormd_files()
+    
+    if not ormd_files:
+        print("✅ No ORMD files staged for commit")
+        return 0
+    
+    print(f"Found {len(ormd_files)} ORMD file(s) to validate:")
+    for f in ormd_files:
+        print(f"  • {f}")
+    
+    # Find ORMD CLI
+    ormd_cli_path = find_ormd_cli()
+    if not ormd_cli_path:
+        print("⚠️  Warning: Could not find ORMD CLI. Install with 'pip install ormd-cli'")
+    
+    # Validate each file
+    failed_files = []
+    
+    for file_path in ormd_files:
+        print(f"\n📝 Validating {file_path}...")
+        
+        result = validate_ormd_file(file_path, ormd_cli_path)
+        
+        if result['success']:
+            print(f"✅ {file_path} is valid")
+            if result['output']:
+                # Show warnings if any
+                lines = result['output'].strip().split('\n')
+                for line in lines:
+                    if 'warning' in line.lower():
+                        print(f"   {line}")
+        else:
+            print(f"❌ {file_path} failed validation:")
+            failed_files.append(file_path)
+            
+            # Show error details
+            if result['output']:
+                for line in result['output'].strip().split('\n'):
+                    if line.strip():
+                        print(f"   {line}")
+            
+            if result['error']:
+                for line in result['error'].strip().split('\n'):
+                    if line.strip():
+                        print(f"   ERROR: {line}")
+    
+    # Summary
+    if failed_files:
+        print(f"\n❌ Commit blocked: {len(failed_files)} ORMD file(s) failed validation")
+        print("\nFailed files:")
+        for f in failed_files:
+            print(f"  • {f}")
+        print("\nFix validation errors and try again, or use 'git commit --no-verify' to skip validation.")
+        return 1
+    else:
+        print(f"\n✅ All {len(ormd_files)} ORMD file(s) are valid. Commit allowed.")
+        return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main()) 

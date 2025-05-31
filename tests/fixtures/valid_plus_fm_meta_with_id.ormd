@@ -7,10 +7,10 @@ links:
     rel: "related"
     to: "doc2.ormd"
 
-# Migrated custom metadata (previously in +++meta custom_meta)
-custom_meta:
-  info: "This is custom metadata."
-  version: 2
+# Migrated custom metadata (previously in +++meta custom_meta) - now using valid fields
+dates:
+  created: "2025-01-01T10:00:00Z"
+  modified: "2025-01-02T10:00:00Z"
 +++
 
 This is the body.
