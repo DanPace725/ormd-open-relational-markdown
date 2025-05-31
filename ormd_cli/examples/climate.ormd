@@ -2,52 +2,75 @@
 +++
 title: Climate Change Impact on Coastal Cities
 authors:
-  - id: dr.sarah.chen
-    display: Dr. Sarah Chen
-    affiliation: Marine Research Institute
-  - id: prof.james.rodriguez
-    display: Prof. James Rodriguez
-    affiliation: Urban Planning Department
+- id: dr.sarah.chen
+  display: Dr. Sarah Chen
+  affiliation: Marine Research Institute
+- id: prof.james.rodriguez
+  display: Prof. James Rodriguez
+  affiliation: Urban Planning Department
 links:
-  - id: sea-level-evidence
-    rel: supports
-    to: "#sea-level-rise"
-  - id: temperature-data
-    rel: supports
-    to: "#temperature-trends"
-  - id: economic-impact
-    rel: supports
-    to: "#economic-analysis"
-  - id: policy-recommendation
-    rel: supports
-    to: "#policy-solutions"
-  - id: infrastructure-challenge
-    rel: related
-    to: "#infrastructure"
-  - id: population-concern
-    rel: supports
-    to: "#population-displacement"
-  - id: mitigation-strategy
-    rel: supports
-    to: "#mitigation"
-  - id: adaptation-approach
-    rel: supports
-    to: "#adaptation"
-  - id: counter-argument
-    rel: refutes
-    to: "#skeptical-view"
-  - id: funding-issue
-    rel: related
-    to: "#economic-analysis"
-  - id: case-study-miami
-    rel: supports
-    to: "#case-studies"
-  - id: case-study-venice
-    rel: supports
-    to: "#case-studies"
-  - id: technological-solution
-    rel: supports
-    to: "#technology"
+- id: sea-level-evidence
+  rel: supports
+  to: '#sea-level-rise'
+- id: temperature-data
+  rel: supports
+  to: '#temperature-trends'
+- id: economic-impact
+  rel: supports
+  to: '#economic-analysis'
+- id: policy-recommendation
+  rel: supports
+  to: '#policy-solutions'
+- id: infrastructure-challenge
+  rel: related
+  to: '#infrastructure'
+- id: population-concern
+  rel: supports
+  to: '#population-displacement'
+- id: mitigation-strategy
+  rel: supports
+  to: '#mitigation'
+- id: adaptation-approach
+  rel: supports
+  to: '#adaptation'
+- id: counter-argument
+  rel: refutes
+  to: '#skeptical-view'
+- id: funding-issue
+  rel: related
+  to: '#economic-analysis'
+- id: case-study-miami
+  rel: supports
+  to: '#case-studies'
+- id: case-study-venice
+  rel: supports
+  to: '#case-studies'
+- id: technological-solution
+  rel: supports
+  to: '#technology'
+dates:
+  created: '2025-05-31T05:36:18.805008Z'
+  modified: '2025-05-31T05:36:18.805036Z'
+metrics:
+  word_count: 1461
+  reading_time: 7 min
+permissions:
+  mode: published
+  editable: true 
+link_ids:
+- sea-level-evidence
+- economic-impact
+- temperature-data
+- population-concern
+- infrastructure-challenge
+- case-study-miami
+- technological-solution
+- funding-issue
+- counter-argument
+- policy-recommendation
+- adaptation-approach
+- mitigation-strategy
+asset_ids: []
 +++
 
 # Climate Change Impact on Coastal Cities: A Comprehensive Analysis

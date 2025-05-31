@@ -1,0 +1,33 @@
+<!-- ormd:0.1 -->
++++
+title: Simple Test Document
+authors:
+  - id: tester
+    display: Test User
+links:
+  - id: test-link
+    rel: supports
+    to: "#section"
++++
+
+# Simple Test Document
+
+This is a **bold** statement and this is *italic*.
+
+Here's a reference to [[test-link]] which should be rendered as a semantic link.
+
+## Section {#section}
+
+- Item 1
+- Item 2
+- Item 3
+
+```javascript
+console.log("Code blocks should work too!");
+```
+
+### Subsection
+
+> This is a blockquote to test formatting.
+
+The live preview should render all of this properly! 

@@ -56,7 +56,7 @@ keywords:
 
 # Climate Change Analysis
 I guess this where you actually edit things. 
-Editting......
+
 This document demonstrates the new ORMD front-matter schema where ALL metadata is contained in the YAML front-matter block, eliminating the need for `+++meta` blocks.
 
 ## Introduction {#introduction}

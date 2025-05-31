@@ -1,0 +1,18 @@
+<!-- ormd:0.1 -->
++++
+title: Restricted Document
+authors:
+  - id: test.user
+    display: Test User
+links: []
+permissions:
+  mode: private
+  editable: false
+  signed: false
++++
+
+# Restricted Document
+
+This document has `editable: false` in its permissions, so the edit command should refuse to edit it unless `--force` is used.
+
+This tests the permissions system integration. 

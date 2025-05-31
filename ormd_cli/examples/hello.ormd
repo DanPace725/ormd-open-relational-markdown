@@ -2,23 +2,35 @@
 +++
 title: ORMD Render Test Document
 authors:
-  - id: daniel.pace
-    display: Daniel Pace
-  - id: jane.smith
-    display: Jane Smith
+- id: daniel.pace
+  display: Daniel Pace
+- id: jane.smith
+  display: Jane Smith
 links:
-  - id: g1
-    rel: supports
-    to: "#goal"
-  - id: c1
-    rel: refutes
-    to: "#challenge"
-  - id: r1
-    rel: related
-    to: "#related-work"
-  - id: f1
-    rel: supports
-    to: "#feature"
+- id: g1
+  rel: supports
+  to: '#goal'
+- id: c1
+  rel: refutes
+  to: '#challenge'
+- id: r1
+  rel: related
+  to: '#related-work'
+- id: f1
+  rel: supports
+  to: '#feature'
+dates:
+  created: '2025-05-31T05:04:26.086314Z'
+  modified: '2025-05-31T05:04:26.086337Z'
+metrics:
+  word_count: 145
+  reading_time: 1 min
+link_ids:
+- g1
+- c1
+- r1
+- f1
+asset_ids: []
 +++
 # ORMD Render Test Document
 

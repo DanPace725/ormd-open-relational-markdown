@@ -1,0 +1,18 @@
+<!-- ormd:0.1 -->
++++
+title: Signed Document
+authors:
+  - id: legal.team
+    display: Legal Team
+links: []
+permissions:
+  mode: published
+  editable: true
+  signed: true
++++
+
+# Signed Document
+
+This document has `signed: true` in its permissions, which means it's cryptographically signed and should not be edited unless forced.
+
+This tests the signature protection system. 
