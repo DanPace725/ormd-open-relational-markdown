@@ -4,29 +4,55 @@
   "scopeName": "source.ormd",
   "patterns": [
     {
+      "comment": "Matches the YAML front-matter block.",
       "include": "#frontmatter"
     },
     {
-      "include": "#ormd-links"
-    },
-    {
-      "include": "text.html.markdown"
+      "comment": "Matches the main content of the document, treated as Markdown with ORMD extensions.",
+      "include": "#markdown_body"
     }
   ],
   "repository": {
     "frontmatter": {
-      "name": "meta.embedded.block.frontmatter.yaml",
-      "begin": "^---$",
-      "end": "^---$",
+      "name": "meta.embedded.block.frontmatter.yaml.ormd",
+      "comment": "Defines the YAML front-matter block delimited by ---.",
+      "begin": "^(---)$\\s*$",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.heading.yaml" }
+      },
+      "end": "^(---)$\\s*$",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.heading.yaml" }
+      },
       "patterns": [
         {
+          "comment": "Includes standard YAML highlighting for the content within the front-matter.",
           "include": "source.yaml"
         }
       ]
     },
-    "ormd-links": {
+    "ormd_link": {
       "name": "markup.underline.link.ormd",
-      "match": "\\[\\[([^\\]]+)\\]\\]"
+      "comment": "Matches ORMD specific links like [[link-id]].",
+      "match": "(\\[\\[)([^\\]]+)(\\]\\])",
+      "captures": {
+        "1": { "name": "punctuation.definition.link.begin.ormd" },
+        "2": { "name": "markup.underline.link.internal.ormd" },
+        "3": { "name": "punctuation.definition.link.end.ormd" }
+      }
+    },
+    "markdown_body": {
+      "comment": "This section handles the main body of the ORMD document.",
+      "patterns": [
+        {
+          "comment": "Attempt to match ORMD custom links first.",
+          "include": "#ormd_link"
+        },
+        {
+          "comment": "Then, apply standard Markdown grammar for the rest of the content. This will provide highlighting for headers, lists, bold, italic, code blocks, etc., as defined by the 'text.html.markdown' grammar.",
+          "include": "text.html.markdown"
+        }
+      ]
     }
   }
 }
