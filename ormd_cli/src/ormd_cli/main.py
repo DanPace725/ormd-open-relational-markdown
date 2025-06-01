@@ -3,12 +3,13 @@ import click
 from .validator import ORMDValidator
 from .packager import ORMDPackager
 from .updater import ORMDUpdater
+from typing import Optional
 import markdown
 import yaml
 from pathlib import Path
 from datetime import datetime, timezone
 from .utils import HTML_TEMPLATE, SYMBOLS
-from .parser import parse_document, serialize_front_matter
+from .parser import parse_document, serialize_front_matter, _parse_front_matter_and_body # Added _parse_front_matter_and_body
 import zipfile
 import json
 import re
@@ -65,6 +66,150 @@ def create(file_path: str):
 
     except Exception as e:
         click.echo(f"{SYMBOLS['error']} Failed to create file: {str(e)}")
+        exit(1)
+
+@cli.command()
+@click.argument('input_file_path', type=click.Path(exists=True, dir_okay=False, resolve_path=True))
+@click.argument('output_ormd_path', type=click.Path(dir_okay=False, resolve_path=True))
+@click.option('--input-format', '-f', type=click.Choice(['txt', 'md'], case_sensitive=False), help='Specify the input file format.')
+def convert(input_file_path: str, output_ormd_path: str, input_format: Optional[str]):
+    """Convert a file (e.g. TXT, MD) to an ORMD file."""
+    try:
+        input_p = Path(input_file_path)
+        output_p = Path(output_ormd_path)
+
+        # Determine format
+        effective_input_format = input_format
+        if not effective_input_format:
+            effective_input_format = input_p.suffix.lower().lstrip('.')
+
+        click.echo(f"{SYMBOLS['info']} Starting conversion...")
+        click.echo(f"  Input file: {input_file_path}")
+        click.echo(f"  Output ORMD file: {output_ormd_path}")
+        click.echo(f"  Detected input format: {effective_input_format if effective_input_format else 'unknown (will attempt .txt)'}")
+
+        if effective_input_format == 'txt':
+            click.echo(f"  Converting from TXT to ORMD...")
+
+            # Read TXT content
+            with click.open_file(input_p, 'r', encoding='utf-8') as f:
+                txt_content = f.read()
+
+            # Derive title
+            title = input_p.stem.replace('-', ' ').replace('_', ' ').title()
+            now_utc_iso = datetime.now(timezone.utc).isoformat()
+
+            front_matter_data = {
+                "title": title,
+                "authors": [],
+                "dates": {
+                    "created": now_utc_iso,
+                    "modified": now_utc_iso,
+                },
+                "source_file": str(input_p.resolve()), # Absolute path
+                "conversion_details": {
+                    "from_format": "txt",
+                    "conversion_date": now_utc_iso
+                }
+            }
+
+            front_matter_string = serialize_front_matter(front_matter_data)
+            ormd_content = f"<!-- ormd:0.1 -->\n{front_matter_string}\n{txt_content}"
+
+            with click.open_file(output_p, 'w', encoding='utf-8') as f:
+                f.write(ormd_content)
+
+            click.echo(f"{SYMBOLS['success']} Successfully converted '{input_p.name}' to '{output_p.name}'")
+
+        elif effective_input_format == 'md':
+            click.echo(f"  Converting from MD to ORMD...")
+
+            with click.open_file(input_p, 'r', encoding='utf-8') as f:
+                md_content_full = f.read()
+
+            body_content = "" # Initialize body_content
+            existing_fm = {}  # Initialize existing_fm
+
+            if md_content_full.strip().startswith("<!-- ormd:0.1 -->"):
+                # File is likely already an ORMD file, parse it fully
+                parsed_fm, parsed_body, _, parse_errors = parse_document(md_content_full)
+                if parse_errors: # Still try to proceed if only minor errors
+                    click.echo(f"{SYMBOLS['warning']} Input ORMD-like file has parsing issues:")
+                    for error in parse_errors: click.echo(f"    {SYMBOLS['bullet']} {error}")
+                if parsed_fm is not None: # if major parsing error, parsed_fm might be None
+                    existing_fm = parsed_fm
+                body_content = parsed_body # Use body from full parse
+            else:
+                # Plain MD file, try to get its front-matter and body
+                raw_fm, plain_body = _parse_front_matter_and_body(md_content_full)
+                existing_fm = raw_fm if raw_fm is not None else {}
+                body_content = plain_body
+
+            now_utc_iso = datetime.now(timezone.utc).isoformat()
+            default_title = input_p.stem.replace('-', ' ').replace('_', ' ').title()
+
+            # Initialize new front-matter with defaults
+            new_fm = {
+                "title": default_title,
+                "authors": [],
+                "dates": { # Default 'created' and 'modified' to now
+                    "created": now_utc_iso,
+                    "modified": now_utc_iso,
+                },
+                "source_file": str(input_p.resolve()),
+                "conversion_details": {
+                    "from_format": "md",
+                    "conversion_date": now_utc_iso
+                }
+            }
+
+            # Merge existing_fm into new_fm
+            # Existing fields take precedence, except for special handling for 'dates'
+            # and ensuring 'source_file' & 'conversion_details' are from the conversion process.
+            if existing_fm:
+                for key, value in existing_fm.items():
+                    if key == "dates":
+                        if isinstance(value, dict):
+                            new_fm["dates"]["created"] = value.get("created", new_fm["dates"]["created"])
+                            # new_fm["dates"]["modified"] is already set to now_utc_iso
+                    elif key not in ["source_file", "conversion_details"]:
+                        new_fm[key] = value
+
+                # If 'dates' object was not in existing_fm, check for root 'date' or 'created'
+                if "dates" not in existing_fm:
+                    if "date" in existing_fm:
+                        new_fm["dates"]["created"] = existing_fm["date"] # Override default 'created'
+                    elif "created" in existing_fm: # A root 'created' field
+                        new_fm["dates"]["created"] = existing_fm["created"] # Override default 'created'
+
+            # Ensure 'authors' is a list. If overridden by a non-list, reset.
+            if not isinstance(new_fm.get("authors"), list):
+                click.echo(f"{SYMBOLS['warning']} Existing 'authors' field was not a list. Resetting to empty list.")
+                new_fm["authors"] = []
+
+            # Ensure title is present, if existing_fm didn't have one, default_title is used.
+            # If existing_fm had a title, it would have overwritten the default.
+            if not new_fm.get("title"): # Should not happen if default_title is always set.
+                 new_fm["title"] = default_title
+
+
+            final_fm_string = serialize_front_matter(new_fm)
+            # Ensure body_content doesn't start with newlines if it was empty after FM.
+            ormd_content = f"<!-- ormd:0.1 -->\n{final_fm_string}\n{body_content.lstrip()}"
+
+
+            with click.open_file(output_p, 'w', encoding='utf-8') as f:
+                f.write(ormd_content)
+
+            click.echo(f"{SYMBOLS['success']} Successfully converted '{input_p.name}' to '{output_p.name}'")
+
+        else:
+            click.echo(f"{SYMBOLS['error']} Unsupported input format: '{effective_input_format}'. Only 'txt' and 'md' are supported.")
+            click.echo(f"Please specify format with --input-format txt (or md once available).")
+            exit(1)
+
+    except Exception as e:
+        click.echo(f"{SYMBOLS['error']} Failed during conversion: {str(e)}")
         exit(1)
 
 @cli.command()

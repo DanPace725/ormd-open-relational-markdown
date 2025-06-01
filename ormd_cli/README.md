@@ -6,7 +6,7 @@
 
 ## 🚀 Project Overview
 
-`ormd-cli` provides lightweight commands to **create, validate, update, pack, unpack, render, and interactively open/edit** `.ormd` documents—combining the simplicity of Markdown with a relational metadata layer and open packaging.
+`ormd-cli` provides lightweight commands to **create, validate, update, pack, unpack, render, convert, and interactively open/edit** `.ormd` documents—combining the simplicity of Markdown with a relational metadata layer and open packaging.
 
 Learn more in the [ORMD 0.1 Specification](https://github.com/open-relational-markdown/spec/blob/main/ormd-0.1.md).
 
@@ -58,6 +58,36 @@ Creates a new ORMD file with minimal front-matter.
 ```bash
 ormd create my-new-document.ormd
 ```
+
+---
+
+### `ormd convert`
+
+Converts various file formats (e.g., plain text, Markdown) to the ORMD 0.1 format.
+
+**Arguments:**
+*   `INPUT_FILE_PATH`: The path to the input file to be converted (e.g., `mydoc.txt`, `notes.md`).
+*   `OUTPUT_ORMD_PATH`: The desired path for the new output ORMD file (e.g., `converted_doc.ormd`).
+
+**Options:**
+*   `--input-format, -f [txt|md]`: Specify the input file format. Currently supports `txt` (plain text) and `md` (Markdown). If omitted, the format is auto-detected from the input file's extension.
+*   `--help`: Show help message and exit.
+
+**Usage Examples:**
+
+*   **Converting a plain text file:**
+    ```bash
+    ormd convert my-document.txt my-document.ormd
+    ```
+    (This will also work if you explicitly add `--input-format txt`)
+
+*   **Converting a Markdown file:**
+    ```bash
+    ormd convert my-notes.md my-notes.ormd --input-format md
+    ```
+    (If the `.md` extension is present, `--input-format md` is often optional)
+
+**Note:** The `convert` command attempts to preserve existing front-matter from Markdown files and intelligently merges it with ORMD-specific metadata. Support for other input formats like HTML, DOCX, and PDF is planned for future releases.
 
 ---
 
