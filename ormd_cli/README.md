@@ -24,7 +24,7 @@ Learn more in the [ORMD 0.1 Specification](https://github.com/open-relational-ma
 ```bash
 # Clone the repo
 git clone https://github.com/open-relational-markdown/ormd-cli.git
-cd ormd-cli
+cd ormd_cli
 
 # Install the CLI (editable mode recommended for development)
 pip install -e .
