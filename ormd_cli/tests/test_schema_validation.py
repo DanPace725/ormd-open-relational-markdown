@@ -1,7 +1,7 @@
 """Tests for ORMD front-matter schema validation."""
 
 import pytest
-from src.ormd_cli.schema import validate_front_matter_schema, FrontMatterValidator
+from ormd_cli.schema import validate_front_matter_schema, FrontMatterValidator
 
 
 class TestFrontMatterSchemaValidation:

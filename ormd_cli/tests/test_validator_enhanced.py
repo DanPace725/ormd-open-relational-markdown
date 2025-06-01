@@ -11,7 +11,7 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
-from src.ormd_cli.validator import ORMDValidator
+from ormd_cli.validator import ORMDValidator
 
 
 class TestEnhancedValidator:

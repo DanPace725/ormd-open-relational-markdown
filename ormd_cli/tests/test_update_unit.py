@@ -7,7 +7,7 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
-from src.ormd_cli.updater import ORMDUpdater
+from ormd_cli.updater import ORMDUpdater
 
 
 class TestUpdateUnit:
@@ -395,7 +395,7 @@ Content that should preserve existing fields.
             assert result['updated']
             
             # Check that existing fields are preserved by reading the updated file
-            from src.ormd_cli.parser import parse_document
+            from ormd_cli.parser import parse_document
             updated_content = Path(temp_path).read_text()
             updated_fm, _, _, _ = parse_document(updated_content)
             
@@ -432,7 +432,7 @@ It should fail gracefully.
             assert result['updated']
             
             # Check that front-matter was created
-            from src.ormd_cli.parser import parse_document
+            from ormd_cli.parser import parse_document
             updated_content = Path(temp_path).read_text()
             updated_fm, _, _, _ = parse_document(updated_content)
             

@@ -4,8 +4,8 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
-from src.ormd_cli.updater import ORMDUpdater
-from src.ormd_cli.parser import parse_document
+from ormd_cli.updater import ORMDUpdater
+from ormd_cli.parser import parse_document
 from datetime import datetime, timezone
 
 

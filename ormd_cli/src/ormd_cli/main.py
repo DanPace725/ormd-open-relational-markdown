@@ -6,8 +6,9 @@ from .updater import ORMDUpdater
 import markdown
 import yaml
 from pathlib import Path
+from datetime import datetime, timezone
 from .utils import HTML_TEMPLATE, SYMBOLS
-from .parser import parse_document
+from .parser import parse_document, serialize_front_matter
 import zipfile
 import json
 import re
@@ -23,6 +24,48 @@ import os
 def cli():
     """ORMD CLI - Tools for Open Relational Markdown"""
     pass
+
+@cli.command()
+@click.argument('file_path')
+def create(file_path: str):
+    """Create a new ORMD file with minimal front-matter."""
+    try:
+        p = Path(file_path)
+        filename = p.stem
+
+        # Convert filename to title (e.g., "my-doc-name" -> "My Doc Name")
+        title = filename.replace('-', ' ').replace('_', ' ').title()
+
+        now_utc_iso = datetime.now(timezone.utc).isoformat()
+
+        front_matter_data = {
+            "title": title,
+            "authors": [],
+            "dates": { # Using 'dates' namespace as per serialize_front_matter logic
+                "created": now_utc_iso,
+                "modified": now_utc_iso,
+            },
+            # Consider adding other useful defaults if any, e.g.
+            # "version": "1.0.0",
+            # "status": "draft",
+            # "permissions": {"editable": True, "mode": "private"}
+        }
+
+        front_matter_string = serialize_front_matter(front_matter_data)
+
+        # Ensure there's a blank line after front-matter for the body
+        # serialize_front_matter already adds a newline at the end of the block.
+        # We add one more for an empty body.
+        content = f"<!-- ormd:0.1 -->\n{front_matter_string}\n"
+
+        with click.open_file(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+        click.echo(f"{SYMBOLS['success']} Created ORMD file: {file_path}")
+
+    except Exception as e:
+        click.echo(f"{SYMBOLS['error']} Failed to create file: {str(e)}")
+        exit(1)
 
 @cli.command()
 @click.argument('file_path')

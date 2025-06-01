@@ -1,8 +1,8 @@
 """Tests for legacy +++meta block deprecation and migration."""
 
 import pytest
-from src.ormd_cli.validator import ORMDValidator
-from src.ormd_cli.parser import parse_document
+from ormd_cli.validator import ORMDValidator
+from ormd_cli.parser import parse_document
 
 
 class TestLegacyMetaBlocks:

@@ -7,7 +7,7 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
-from src.ormd_cli.parser import parse_document, serialize_front_matter
+from ormd_cli.parser import parse_document, serialize_front_matter
 
 
 class TestParserUnit:
