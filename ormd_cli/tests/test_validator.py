@@ -1,6 +1,6 @@
 # tests/test_validator.py
 import pytest
-from src.ormd_cli.validator import ORMDValidator
+from ormd_cli.validator import ORMDValidator
 
 # Ensure the original valid document test still passes (backwards compatibility)
 def test_original_valid_document():
