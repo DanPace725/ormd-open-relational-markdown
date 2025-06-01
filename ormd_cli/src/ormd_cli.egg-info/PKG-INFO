@@ -1,9 +1,0 @@
-Metadata-Version: 2.4
-Name: ormd-cli
-Version: 0.1.0
-Summary: CLI tool for Open Relational Markdown
-Requires-Dist: click>=8.0
-Requires-Dist: pyyaml>=6.0
-Requires-Dist: markdown>=3.4
-Requires-Dist: jsonschema>=4.0
-Requires-Dist: pdfminer.six>=20221105
