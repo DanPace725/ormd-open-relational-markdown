@@ -63,14 +63,14 @@ ormd create my-new-document.ormd
 
 ### `ormd convert`
 
-Converts various file formats (e.g., plain text, Markdown) to the ORMD 0.1 format.
+Converts various file formats (e.g., plain text, Markdown, PDF) to the ORMD 0.1 format. This command uses `pdfminer.six` for PDF processing, which is now a project dependency.
 
 **Arguments:**
 *   `INPUT_FILE_PATH`: The path to the input file to be converted (e.g., `mydoc.txt`, `notes.md`).
 *   `OUTPUT_ORMD_PATH`: The desired path for the new output ORMD file (e.g., `converted_doc.ormd`).
 
 **Options:**
-*   `--input-format, -f [txt|md]`: Specify the input file format. Currently supports `txt` (plain text) and `md` (Markdown). If omitted, the format is auto-detected from the input file's extension.
+*   `--input-format, -f [txt|md|pdf]`: Specify the input file format. Currently supports `txt` (plain text), `md` (Markdown), and `pdf`. If omitted, the format is auto-detected from the input file's extension.
 *   `--help`: Show help message and exit.
 
 **Usage Examples:**
@@ -87,7 +87,17 @@ Converts various file formats (e.g., plain text, Markdown) to the ORMD 0.1 forma
     ```
     (If the `.md` extension is present, `--input-format md` is often optional)
 
-**Note:** The `convert` command attempts to preserve existing front-matter from Markdown files and intelligently merges it with ORMD-specific metadata. Support for other input formats like HTML, DOCX, and PDF is planned for future releases.
+*   **Converting a PDF file:**
+    ```bash
+    ormd convert my-report.pdf my-report.ormd
+    ```
+
+**Notes on PDF Conversion:**
+*   Currently supports text-based PDF conversion. It attempts to extract text content and preserve paragraph structure using layout analysis.
+*   Metadata such as Title, Author, Keywords, CreationDate, and ModDate will be extracted from the PDF's properties if available and included in the ORMD front-matter.
+*   Conversion of image-based (scanned) PDFs or PDFs with very complex layouts might result in limited or poorly structured text output. OCR for scanned PDFs is not yet implemented.
+
+**Note:** Support for other input formats like HTML and DOCX is planned for future releases.
 
 ---
 

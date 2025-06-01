@@ -321,3 +321,68 @@ This is an ORMD document.
 
         expected_body = "# Original ORMD Body\n\nThis is an ORMD document."
         assert body.strip() == expected_body.strip()
+
+    def test_parse_pdf_date_string(self):
+        """Test the _parse_pdf_date_string helper function directly."""
+        # Import here to avoid issues if main.py is not fully importable during collection
+        from ormd_cli.main import _parse_pdf_date_string
+
+        # Valid cases
+        assert _parse_pdf_date_string("D:20230401123045Z") == "2023-04-01T12:30:45Z"
+        assert _parse_pdf_date_string("D:20230401103045+02'00'") == "2023-04-01T08:30:45Z" # Converted to UTC
+        assert _parse_pdf_date_string("D:20230401153045-02'00'") == "2023-04-01T17:30:45Z" # Converted to UTC
+        assert _parse_pdf_date_string("D:202304011230Z") == "2023-04-01T12:30:00Z"
+        assert _parse_pdf_date_string("D:2023040112Z") == "2023-04-01T12:00:00Z"
+        assert _parse_pdf_date_string("D:20230401Z") == "2023-04-01T00:00:00Z"
+        assert _parse_pdf_date_string("D:202304Z") == "2023-04-01T00:00:00Z" # Month only
+        assert _parse_pdf_date_string("D:2023Z") == "2023-01-01T00:00:00Z" # Year only
+        assert _parse_pdf_date_string("20230401123045+02'00'") == "2023-04-01T10:30:45Z" # No "D:" prefix - CORRECTED
+        assert _parse_pdf_date_string("D:20230401") == "2023-04-01T00:00:00Z" # Date only
+        assert _parse_pdf_date_string("D:20240130174918+00'00'") == "2024-01-30T17:49:18Z"
+
+        # Invalid cases
+        assert _parse_pdf_date_string(None) is None
+        assert _parse_pdf_date_string("") is None
+        assert _parse_pdf_date_string("invalid_date") is None
+        assert _parse_pdf_date_string("D:invalid") is None
+        assert _parse_pdf_date_string(b"D:20230401123045Z") == "2023-04-01T12:30:45Z" # Bytes input
+        assert _parse_pdf_date_string(b"invalid bytes") is None
+
+    def test_convert_pdf_invalid_file_causes_error(self, tmp_path):
+        """Test PDF conversion with an invalid (non-PDF) file."""
+        runner = CliRunner()
+        input_filename = "invalid_is_actually_text.pdf"
+        output_filename = "invalid_pdf_output.ormd"
+
+        input_filepath = tmp_path / input_filename
+        output_filepath = tmp_path / output_filename
+
+        input_filepath.write_text("This is not a PDF content.", encoding='utf-8')
+
+        result = runner.invoke(cli, ['convert', str(input_filepath), str(output_filepath)])
+
+        assert result.exit_code != 0, "Command should fail for invalid PDF"
+        assert "Failed to parse PDF for metadata (PDFSyntaxError)" in result.output or \
+               "Failed to process PDF for text extraction (PDFSyntaxError)" in result.output or \
+               "Failed to process PDF file" in result.output # More general error if it's not PDFSyntaxError
+
+        assert not output_filepath.exists(), "Output file should not be created on PDF processing failure"
+
+    def test_convert_pdf_empty_file_causes_error(self, tmp_path):
+        """Test PDF conversion with an empty file named .pdf."""
+        runner = CliRunner()
+        input_filename = "empty.pdf"
+        output_filename = "empty_pdf_output.ormd"
+
+        input_filepath = tmp_path / input_filename
+        output_filepath = tmp_path / output_filename
+
+        input_filepath.touch() # Create empty file
+
+        result = runner.invoke(cli, ['convert', str(input_filepath), str(output_filepath), '--input-format', 'pdf'])
+
+        assert result.exit_code != 0, "Command should fail for empty PDF"
+        assert "Failed to parse PDF for metadata (PDFSyntaxError)" in result.output or \
+               "Failed to process PDF for text extraction (PDFSyntaxError)" in result.output or \
+               "Failed to process PDF file" in result.output
+        assert not output_filepath.exists(), "Output file should not be created for empty PDF"

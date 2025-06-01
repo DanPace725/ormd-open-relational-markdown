@@ -14,6 +14,8 @@ src/ormd_cli.egg-info/dependency_links.txt
 src/ormd_cli.egg-info/entry_points.txt
 src/ormd_cli.egg-info/requires.txt
 src/ormd_cli.egg-info/top_level.txt
+tests/test_convert_command.py
+tests/test_create_command.py
 tests/test_legacy_meta_blocks.py
 tests/test_parser_unit.py
 tests/test_schema_validation.py

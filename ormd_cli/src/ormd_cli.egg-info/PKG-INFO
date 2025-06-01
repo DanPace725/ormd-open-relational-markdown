@@ -6,3 +6,4 @@ Requires-Dist: click>=8.0
 Requires-Dist: pyyaml>=6.0
 Requires-Dist: markdown>=3.4
 Requires-Dist: jsonschema>=4.0
+Requires-Dist: pdfminer.six>=20221105
