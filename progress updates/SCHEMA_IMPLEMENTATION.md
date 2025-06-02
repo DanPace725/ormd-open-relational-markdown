@@ -164,39 +164,24 @@ python -m pytest tests/test_schema_validation.py -v
 6. **Type Safety**: Comprehensive type and format validation
 7. **Tool Friendly**: Works with existing markdown editors and processors
 
-## Migration from +++meta Blocks
+## Consolidation of Metadata (Replacing +++meta Blocks)
 
-The new schema eliminates the need for `+++meta` blocks by moving all metadata into the front-matter:
+The new schema consolidates all metadata into the single YAML front-matter block at the beginning of the document. Separate `+++meta` blocks in the document body are no longer supported.
 
-**Before (with +++meta):**
-```ormd
----
-title: Document
-authors: [...]
-links: [...]
----
-
-# Content
-
-+++meta
-created: 2025-05-29
-wordCount: 247
-+++end-meta
-```
-
-**After (schema-based):**
-```ormd
+**Example of All Metadata in Front-matter:**
+```yaml
 ---
 title: Document
 authors: [...]
 links: [...]
 dates:
-  created: "2025-05-29T10:00:00Z"
+  created: "2025-05-29T10:00:00Z" # Was potentially in a +++meta block
 metrics:
-  word_count: 247
+  word_count: 247 # Was potentially in a +++meta block
+# ... other standard and custom metadata fields ...
 ---
 
 # Content
 ```
 
-This approach follows the design philosophy that "ALL metadata should be in the front-matter YAML block" for maximum compatibility and editability. 
+This approach follows the design philosophy that "ALL metadata should be in the front-matter YAML block" for maximum compatibility and editability.

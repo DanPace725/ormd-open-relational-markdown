@@ -446,4 +446,41 @@ This references [[used-link]] properly.
             assert "✅ Document is valid ORMD 0.1" in summary
             
         finally:
-            os.unlink(temp_path) 
+            os.unlink(temp_path)
+
+    def test_validate_invalid_legacy_meta_fixture(self):
+        """Test validator fails document with legacy +++meta block."""
+        # Create a temporary file with content from the fixture
+        fixture_path = Path(__file__).parent / "fixtures" / "invalid_legacy_meta.ormd"
+        content = fixture_path.read_text(encoding='utf-8')
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.ormd', delete=False) as f:
+            f.write(content)
+            temp_path = f.name
+
+        try:
+            validator = ORMDValidator()
+            result = validator.validate_file(temp_path)
+
+            assert not result
+            assert any("`+++meta` or `+++end-meta` blocks are no longer supported" in error for error in validator.errors)
+        finally:
+            os.unlink(temp_path)
+
+    def test_validate_invalid_multiple_yaml_fixture(self):
+        """Test validator fails document with multiple YAML blocks."""
+        fixture_path = Path(__file__).parent / "fixtures" / "invalid_multiple_yaml.ormd"
+        content = fixture_path.read_text(encoding='utf-8')
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.ormd', delete=False) as f:
+            f.write(content)
+            temp_path = f.name
+
+        try:
+            validator = ORMDValidator()
+            result = validator.validate_file(temp_path)
+
+            assert not result
+            assert any("Multiple YAML front-matter blocks found" in error for error in validator.errors)
+        finally:
+            os.unlink(temp_path)

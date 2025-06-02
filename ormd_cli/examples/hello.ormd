@@ -1,5 +1,5 @@
 <!-- ormd:0.1 -->
-+++
+---
 title: ORMD Render Test Document
 authors:
 - id: daniel.pace
@@ -31,7 +31,7 @@ link_ids:
 - r1
 - f1
 asset_ids: []
-+++
+---
 # ORMD Render Test Document
 
 Welcome to the **ORMD Render Test**. This document is designed to test the renderer's ability to handle:

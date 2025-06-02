@@ -1,5 +1,5 @@
 <!-- ormd:0.1 -->
-+++
+---
 title: Restricted Document
 authors:
   - id: test.user
@@ -9,7 +9,7 @@ permissions:
   mode: private
   editable: false
   signed: false
-+++
+---
 
 # Restricted Document
 
