@@ -1,0 +1,405 @@
+<!-- ormd:0.1 -->
++++
+title: ORMD 0.1 Specification (Implementation Update)
+authors:
+- id: ormd-team
+  display: ORMD Development Team
+links:
+- id: cli-commands
+  rel: supports
+  to: '#cli-implementation'
+- id: front-matter-schema
+  rel: supports
+  to: '#front-matter-structure'
+- id: validation-rules
+  rel: supports
+  to: '#validation-rules'
+- id: packaging-system
+  rel: supports
+  to: '#cli-implementation'
+- id: rendering-features
+  rel: supports
+  to: '#cli-implementation'
+- id: conversion-support
+  rel: supports
+  to: '#format-conversion'
+- id: example-basic
+  rel: supports
+  to: '#example-basic-document'
+- id: example-complex
+  rel: supports
+  to: '#example-complex-document'
+- id: goal
+  rel: supports
+  to: '#overview'
+- id: counter-argument
+  rel: related
+  to: '#migration-from-v01-draft'
+- id: methodology-support
+  rel: supports
+  to: '#validation-rules'
+dates:
+  created: '2025-06-02T00:00:00.000000+00:00'
+  modified: '2025-06-02T00:42:19.149679Z'
+metrics:
+  word_count: 831
+  reading_time: 4 min
+version: 0.1-implementation
+status: published
+description: Updated ORMD 0.1 specification reflecting the current implementation
+  state and working features
+link_ids:
+- goal
+- front-matter-schema
+- packaging-system
+- validation-rules
+- conversion-support
+- rendering-features
+- cli-commands
+- methodology-support
+- counter-argument
+- example-basic
+- example-complex
+asset_ids: []
++++
+
+# ORMD 0.1 Specification (Implementation Update)
+
+**Version:** 0.1-implementation | **Date:** 2025-06-02
+
+---
+
+## 1. Overview {#overview}
+
+Open Relational Markdown (`.ormd`) 0.1 is a working specification with a complete implementation that:
+
+* Extends CommonMark with a lightweight relational layer using [[goal]] syntax
+* Defines a comprehensive [[front-matter-schema]] with organized namespaces
+* Provides both plain-text and ZIP-packed [[packaging-system]] options
+* Includes a full-featured CLI with [[validation-rules]], [[conversion-support]], and interactive editing
+* Supports web-based [[rendering-features]] with semantic link visualization
+
+This update reflects what has actually been built and tested, not just planned features.
+
+## 2. File Version Tag {#file-version-tag}
+
+Every `.ormd` file **MUST** begin with an HTML comment version marker:
+
+```ormd
+<!-- ormd:0.1 -->
+```
+
+* Ensures toolchains can detect and validate against the correct spec
+* **Implementation status**: ✅ Enforced by validator and required by all CLI commands
+
+## 3. Front-Matter Structure {#front-matter-structure}
+
+### 3.1 Delimiter Support
+
+ORMD supports both `+++` and `---` delimiters for YAML front-matter:
+
+```ormd
+<!-- ormd:0.1 -->
++++
+title: Example with Plus Delimiters
+authors:
+  - Alice L.
+links: []
++++
+```
+
+```ormd
+<!-- ormd:0.1 -->
+---
+title: Example with Dash Delimiters  
+authors:
+  - Alice L.
+links: []
+---
+```
+
+**Implementation status**: ✅ Both formats fully supported with robust state machine parser
+
+### 3.2 Required Fields
+
+Every ORMD document **MUST** include these front-matter fields:
+
+* `title` — Document title (non-empty string)
+* `authors` — List of authors (non-empty list, can be strings or objects)
+* `links` — List of semantic link definitions (can be empty list)
+
+### 3.3 Organized Metadata Namespaces
+
+The implementation organizes optional metadata into logical namespaces:
+
+```yaml
+# Timestamp management
+dates:
+  created: '2025-06-02T00:00:00.000000+00:00'
+  modified: '2025-06-02T00:00:00.000000+00:00'
+
+# Document metrics (auto-updated)
+metrics:
+  word_count: 1450
+  reading_time: '7 min'
+
+# Access control
+permissions:
+  mode: 'published'    # draft, published, private
+  editable: true
+  signed: false
+```
+
+### 3.4 Auto-Maintained Fields
+
+The [[cli-commands]] update command automatically maintains:
+
+* `link_ids` — List of all link references found in document body
+* `asset_ids` — List of all referenced assets (images, files)
+* `dates.modified` — Updated on each document change
+* `metrics.word_count` — Recalculated word count
+* `metrics.reading_time` — Estimated reading time
+
+**Implementation status**: ✅ Working with `ormd update` command
+
+### 3.5 Legacy +++meta Block Migration
+
+**Breaking change**: The original specification's `+++meta` blocks are **no longer supported**. All metadata must be in the YAML front-matter. The implementation includes migration utilities for legacy documents.
+
+## 4. Relational Layer {#relational-layer}
+
+### 4.1 Link Definitions
+
+Links are defined in the front-matter `links` field:
+
+```yaml
+links:
+  - id: methodology-support
+    rel: supports  
+    to: "#methodology"
+  - id: external-source
+    rel: related
+    to: "https://example.com/paper"
+```
+
+**Supported relation types**: `supports`, `refutes`, `related`, and custom types.
+
+### 4.2 Inline Link References
+
+Use double square brackets around link IDs anywhere in the document body:
+
+```markdown
+Our [[methodology-support]] follows established protocols.
+However, there are [[counter-argument]] considerations to address.
+```
+
+**Implementation status**: ✅ Full validation ensures all link references have corresponding link definitions
+
+## 5. CLI Implementation {#cli-implementation}
+
+The ORMD CLI provides comprehensive document lifecycle management:
+
+### 5.1 Document Creation and Conversion
+
+```bash
+# Create new document
+ormd create my-document.ormd
+
+# Convert from various formats
+ormd convert document.pdf document.ormd       # PDF extraction
+ormd convert notes.md notes.ormd              # Markdown import
+ormd convert notes.txt notes.ormd             # Plain text import
+```
+
+**Implementation status**: ✅ Working with PDF text extraction, metadata preservation
+
+### 5.2 Validation and Quality Assurance
+
+```bash
+# Comprehensive validation
+ormd validate document.ormd --verbose
+
+# Auto-sync metadata  
+ormd update document.ormd --dry-run           # Preview changes
+ormd update document.ormd                     # Apply updates
+```
+
+**Validation checks**:
+* ✅ Version tag presence
+* ✅ Required front-matter fields
+* ✅ YAML schema compliance
+* ✅ Link reference consistency (link references ↔ `links` definitions)
+* ✅ Asset existence verification
+
+### 5.3 Packaging System
+
+```bash
+# Pack for distribution
+ormd pack content.ormd meta.json --out package.ormd
+
+# Unpack for editing
+ormd unpack package.ormd --out-dir ./unpacked
+```
+
+**Package structure**:
+```
+package.ormd/
+├── content.ormd      # Main document
+├── meta.json         # JSON-LD metadata
+├── assets/           # Embedded files
+└── render.css        # Default styling
+```
+
+**Implementation status**: ✅ Full packaging/unpackaging with validation
+
+### 5.4 Rendering and Interaction
+
+```bash
+# Generate static HTML
+ormd render document.ormd --out document.html
+
+# Interactive viewing  
+ormd open document.ormd                       # Read-only with sidebar
+
+# Web-based editing
+ormd edit document.ormd                       # Full editor interface
+```
+
+**Rendering features**:
+* ✅ Semantic link highlighting
+* ✅ Document relationship graph visualization  
+* ✅ Collapsible sidebar with metadata
+* ✅ Raw `.ormd` source view
+* ✅ Live link validation
+* ✅ Mobile-responsive design
+
+## 6. Format Conversion {#format-conversion}
+
+### 6.1 PDF Import
+
+The implementation supports intelligent PDF conversion:
+
+```bash
+ormd convert research-paper.pdf research-paper.ormd
+```
+
+**Features**:
+* ✅ Text extraction with layout analysis
+* ✅ Metadata extraction (title, authors, dates, keywords)
+* ✅ Paragraph structure preservation
+* ⚠️ Image-based PDFs require manual review
+
+### 6.2 Markdown Import
+
+Existing Markdown files can be imported with front-matter preservation:
+
+```bash
+ormd convert existing.md converted.ormd
+```
+
+**Features**:
+* ✅ Preserves existing YAML front-matter
+* ✅ Merges with ORMD schema requirements
+* ✅ Handles Jekyll/Hugo/Obsidian formats
+* ✅ Adds conversion metadata
+
+## 7. Validation Rules {#validation-rules}
+
+An ORMD validator **MUST** check:
+
+1. ✅ Presence and correct format of `<!-- ormd:0.1 -->` version tag
+2. ✅ Valid YAML front-matter with required fields (`title`, `authors`, `links`)
+3. ✅ Schema compliance for all front-matter fields
+4. ✅ Every link reference has a corresponding `links` entry
+5. ✅ All assets in `asset_ids` exist on disk (for local references)
+6. ✅ For packages: proper ZIP structure with `content.ormd`
+
+**Implementation status**: ✅ All validation rules implemented with clear error messages
+
+## 8. Example: Basic Document {#example-basic-document}
+
+The [[example-basic]] demonstrates core ORMD functionality:
+
+```ormd
+<!-- ormd:0.1 -->
++++
+title: Basic ORMD Document
+authors:
+  - Daniel Pace
+links:
+  - id: goal
+    rel: supports
+    to: "#objective"
+dates:
+  created: '2025-06-02T00:00:00Z'
+  modified: '2025-06-02T00:00:00Z'
++++
+
+# Basic ORMD Document
+
+This document demonstrates the core ORMD format with semantic links.
+
+Our primary [[goal]] is to create readable, relational documents.
+
+## Objective {#objective}
+
+Open. Relational. Markdown.
+```
+
+## 9. Example: Complex Document {#example-complex-document}
+
+See the [[example-complex]] climate change analysis in the CLI examples directory, which demonstrates:
+
+* ✅ Multiple authors with affiliations
+* ✅ Complex link relationships (`supports`, `refutes`, `related`)
+* ✅ Organized metadata namespaces
+* ✅ Auto-maintained metrics
+* ✅ Cross-references throughout the document
+
+## 10. Implementation Status Summary {#implementation-status-summary}
+
+### ✅ Fully Implemented
+- Complete CLI with all major commands
+- YAML front-matter parsing with both `+++` and `---` delimiters
+- Semantic link validation and consistency checking
+- PDF/Markdown/text conversion with metadata extraction
+- Interactive HTML rendering with relationship visualization
+- ZIP packaging system
+- Auto-updating metadata sync
+- Comprehensive validation with helpful error messages
+
+### ⚠️ Partially Implemented  
+- Cryptographic signing (structure ready, signature validation pending)
+- Asset embedding optimization
+- Advanced PDF layout analysis
+
+### 📋 Future Versions (v0.2+)
+- CRDT change-feed embedding and merge rules
+- Inline commenting and annotation syntax
+- Real-time collaborative editing
+- Plugin architecture for custom relation types
+
+## 11. Migration from v0.1 Draft {#migration-from-v01-draft}
+
+Documents using the original `+++meta` block syntax must be migrated:
+
+```bash
+# The update command includes migration utilities
+ormd update legacy-document.ormd --verbose
+```
+
+The migration moves all `+++meta` block content into the appropriate front-matter namespaces.
+
+## 12. Conformance and Testing {#conformance-and-testing}
+
+The implementation includes:
+* ✅ Comprehensive test suite with example documents
+* ✅ CLI integration tests for all commands  
+* ✅ Validation test vectors (both valid and invalid documents)
+* ✅ Conversion accuracy tests for PDF/Markdown import
+
+**Validator command**: `ormd validate` with detailed Phase 1 compliance checking
+
+---
+
+This specification reflects the **working implementation** of ORMD 0.1, not just theoretical design. All marked features have been tested and are available in the current CLI release. 

@@ -1,0 +1,1066 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORMD 0.1 Specification (Implementation Update) - ORMD Render</title>
+  <style>
+    /* Inlined CSS for full portability */
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #121212;
+      color: #e0e0e0;
+      scroll-behavior: smooth;
+    }
+    #container {
+      display: flex;
+      min-height: 100vh;
+    }
+    #sidebar {
+      width: 320px;
+      background: #1c1c1c;
+      border-right: 1px solid #373e47;
+      transition: width 0.2s;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: #e0e0e0;
+    }
+    #sidebar.collapsed {
+      width: 48px;
+    }
+    #sidebar.collapsed nav {
+      display: none;
+    }
+    #sidebar.collapsed .panel {
+      display: none;
+    }
+    #sidebar nav {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid #373e47;
+    }
+    #sidebar nav button {
+      background: none;
+      border: none;
+      padding: 16px;
+      font-size: 1.2em;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.1s;
+      color: #e0e0e0;
+    }
+    #sidebar nav button:hover {
+      background: #333333;
+    }
+    #sidebar nav button.active {
+      background: #004080;
+      font-weight: bold;
+      color: #ffffff;
+    }
+    .panel {
+      display: none;
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+      background: #1c1c1c;
+      color: #e0e0e0;
+    }
+    .panel.active {
+      display: block;
+    }
+    #collapse-btn {
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+      align-self: flex-end;
+      margin: 8px;
+      color: #e0e0e0;
+    }
+    #collapse-btn:hover {
+      color: #ffffff;
+    }
+    #main-doc {
+      flex: 1;
+      padding: 40px 5vw;
+      background: #121212;
+      min-width: 0;
+      color: #e0e0e0;
+    }
+    
+    /* Enhanced Code Block Styles */
+    pre {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.45;
+      overflow-x: auto;
+      color: #c9d1d9;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      margin: 16px 0;
+    }
+    
+    code {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-size: 0.9em;
+      color: #f85149;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    
+    pre code {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: inherit;
+      border-radius: 0;
+    }
+    
+    /* Syntax highlighting for common languages */
+    .codehilite .k { color: #ff7b72; } /* keyword */
+    .codehilite .s { color: #a5d6ff; } /* string */
+    .codehilite .nb { color: #79c0ff; } /* builtin */
+    .codehilite .nf { color: #d2a8ff; } /* function */
+    .codehilite .c { color: #8b949e; } /* comment */
+    .codehilite .mi { color: #79c0ff; } /* number */
+    .codehilite .o { color: #ff7b72; } /* operator */
+    
+    /* YAML/ORMD specific highlighting */
+    .language-yaml .na { color: #79c0ff; } /* attribute name */
+    .language-yaml .s { color: #a5d6ff; } /* string */
+    .language-ormd .nc { color: #f85149; } /* comment tag */
+    
+    .panel h3 {
+      color: #e0e0e0;
+      border-bottom: 1px solid #373e47;
+      padding-bottom: 8px;
+    }
+    
+    /* ORMD Link Styles - Enhanced for dark theme */
+    .ormd-link { 
+      padding: 3px 8px; 
+      border-radius: 4px; 
+      text-decoration: none; 
+      font-weight: 500; 
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    .ormd-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .ormd-link-supports { 
+      background: #1a4d1a; 
+      color: #7dd87d; 
+      border-color: #4d7c4d; 
+    }
+    .ormd-link-supports:hover {
+      background: #2e6b2e;
+      color: #a3e8a3;
+    }
+    .ormd-link-refutes { 
+      background: #4d1a1a; 
+      color: #ff7d7d; 
+      border-color: #7c4d4d; 
+    }
+    .ormd-link-refutes:hover {
+      background: #6b2e2e;
+      color: #ffa3a3;
+    }
+    .ormd-link-related { 
+      background: #1a3d4d; 
+      color: #7dc7ff; 
+      border-color: #4d6d7c; 
+    }
+    .ormd-link-related:hover {
+      background: #2e576b;
+      color: #a3d8ff;
+    }
+    .ormd-link-undefined { 
+      background: #4d3d1a; 
+      color: #ffb366; 
+      border-color: #7c6d4d; 
+    }
+    .ormd-link-undefined:hover {
+      background: #6b562e;
+      color: #ffc999;
+    }
+
+    /* Main content typography improvements */
+    #main-doc h1, #main-doc h2, #main-doc h3, #main-doc h4, #main-doc h5, #main-doc h6 {
+      color: #ffffff;
+      margin-top: 24px;
+      margin-bottom: 16px;
+      line-height: 1.25;
+    }
+    
+    #main-doc h1 { border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+    #main-doc h2 { border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+    
+    #main-doc p {
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    
+    #main-doc ul, #main-doc ol {
+      padding-left: 2em;
+      margin-bottom: 16px;
+    }
+    
+    #main-doc li {
+      margin-bottom: 4px;
+    }
+    
+    #main-doc blockquote {
+      border-left: 4px solid #30363d;
+      padding-left: 16px;
+      margin: 16px 0;
+      color: #8b949e;
+    }
+
+    @media (max-width: 700px) {
+      #sidebar {
+        position: absolute;
+        z-index: 10;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        border-right: 1px solid #373e47;
+      }
+      #main-doc {
+        padding: 24px 2vw;
+      }
+      #collapse-btn {
+        font-size: 1.8em;
+        padding: 8px;
+        margin: 4px;
+      }
+    }
+  </style>
+  <!-- D3.js for document graph -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+  <div id="container">
+    <div id="sidebar" class="collapsed">
+      <button id="collapse-btn" title="Toggle sidebar">☰</button>
+      <nav>
+        <button id="toggle-raw" class="active">👁 Raw .ormd</button>
+        <button id="toggle-graph">🧬 Document Graph</button>
+        <button id="toggle-history">✍️ Change History</button>
+      </nav>
+      <div id="panel-raw" class="panel active">
+        <h3>Raw .ormd</h3>
+        <pre id="raw-content">&lt;!-- ormd:0.1 --&gt;
++++
+title: ORMD 0.1 Specification (Implementation Update)
+authors:
+- id: ormd-team
+  display: ORMD Development Team
+links:
+- id: cli-commands
+  rel: supports
+  to: "#cli-implementation"
+- id: front-matter-schema
+  rel: supports
+  to: "#front-matter-structure"
+- id: validation-rules
+  rel: supports
+  to: "#validation-rules"
+- id: packaging-system
+  rel: supports
+  to: "#cli-implementation"
+- id: rendering-features
+  rel: supports
+  to: "#cli-implementation"
+- id: conversion-support
+  rel: supports
+  to: "#format-conversion"
+- id: example-basic
+  rel: supports
+  to: "#example-basic-document"
+- id: example-complex
+  rel: supports
+  to: "#example-complex-document"
+- id: goal
+  rel: supports
+  to: "#overview"
+- id: counter-argument
+  rel: related
+  to: "#migration-from-v01-draft"
+- id: methodology-support
+  rel: supports
+  to: "#validation-rules"
+dates:
+  created: '2025-06-02T00:00:00.000000+00:00'
+  modified: '2025-06-02T00:24:44.340464Z'
+metrics:
+  word_count: 819
+  reading_time: 4 min
+version: "0.1-implementation"
+status: published
+description: Updated ORMD 0.1 specification reflecting the current implementation state and working features
+link_ids:
+- goal
+- front-matter-schema
+- packaging-system
+- validation-rules
+- conversion-support
+- rendering-features
+- cli-commands
+- methodology-support
+- counter-argument
+- example-complex
+- example-basic
+asset_ids: []
++++
+
+# ORMD 0.1 Specification (Implementation Update)
+
+**Version:** 0.1-implementation | **Date:** 2025-06-02
+
+---
+
+## 1. Overview {#overview}
+
+Open Relational Markdown (`.ormd`) 0.1 is a working specification with a complete implementation that:
+
+* Extends CommonMark with a lightweight relational layer using [[goal]] syntax
+* Defines a comprehensive [[front-matter-schema]] with organized namespaces
+* Provides both plain-text and ZIP-packed [[packaging-system]] options
+* Includes a full-featured CLI with [[validation-rules]], [[conversion-support]], and interactive editing
+* Supports web-based [[rendering-features]] with semantic link visualization
+
+This update reflects what has actually been built and tested, not just planned features.
+
+## 2. File Version Tag {#file-version-tag}
+
+Every `.ormd` file **MUST** begin with an HTML comment version marker:
+
+```ormd
+&lt;!-- ormd:0.1 --&gt;
+```
+
+* Ensures toolchains can detect and validate against the correct spec
+* **Implementation status**: ✅ Enforced by validator and required by all CLI commands
+
+## 3. Front-Matter Structure {#front-matter-structure}
+
+### 3.1 Delimiter Support
+
+ORMD supports both `+++` and `---` delimiters for YAML front-matter:
+
+```ormd
+&lt;!-- ormd:0.1 --&gt;
++++
+title: Example with Plus Delimiters
+authors:
+  - Alice L.
+links: []
++++
+```
+
+```ormd
+&lt;!-- ormd:0.1 --&gt;
+---
+title: Example with Dash Delimiters  
+authors:
+  - Alice L.
+links: []
+---
+```
+
+**Implementation status**: ✅ Both formats fully supported with robust state machine parser
+
+### 3.2 Required Fields
+
+Every ORMD document **MUST** include these front-matter fields:
+
+* `title` — Document title (non-empty string)
+* `authors` — List of authors (non-empty list, can be strings or objects)
+* `links` — List of semantic link definitions (can be empty list)
+
+### 3.3 Organized Metadata Namespaces
+
+The implementation organizes optional metadata into logical namespaces:
+
+```yaml
+# Timestamp management
+dates:
+  created: '2025-06-02T00:00:00.000000+00:00'
+  modified: '2025-06-02T00:00:00.000000+00:00'
+
+# Document metrics (auto-updated)
+metrics:
+  word_count: 1450
+  reading_time: '7 min'
+
+# Access control
+permissions:
+  mode: 'published'    # draft, published, private
+  editable: true
+  signed: false
+```
+
+### 3.4 Auto-Maintained Fields
+
+The [[cli-commands]] update command automatically maintains:
+
+* `link_ids` — List of all link references found in document body
+* `asset_ids` — List of all referenced assets (images, files)
+* `dates.modified` — Updated on each document change
+* `metrics.word_count` — Recalculated word count
+* `metrics.reading_time` — Estimated reading time
+
+**Implementation status**: ✅ Working with `ormd update` command
+
+### 3.5 Legacy +++meta Block Migration
+
+**Breaking change**: The original specification's `+++meta` blocks are **no longer supported**. All metadata must be in the YAML front-matter. The implementation includes migration utilities for legacy documents.
+
+## 4. Relational Layer {#relational-layer}
+
+### 4.1 Link Definitions
+
+Links are defined in the front-matter `links` field:
+
+```yaml
+links:
+  - id: methodology-support
+    rel: supports  
+    to: "#methodology"
+  - id: external-source
+    rel: related
+    to: "https://example.com/paper"
+```
+
+**Supported relation types**: `supports`, `refutes`, `related`, and custom types.
+
+### 4.2 Inline Link References
+
+Use double square brackets around link IDs anywhere in the document body:
+
+```markdown
+Our [[methodology-support]] follows established protocols.
+However, there are [[counter-argument]] considerations to address.
+```
+
+**Implementation status**: ✅ Full validation ensures all link references have corresponding link definitions
+
+## 5. CLI Implementation {#cli-implementation}
+
+The ORMD CLI provides comprehensive document lifecycle management:
+
+### 5.1 Document Creation and Conversion
+
+```bash
+# Create new document
+ormd create my-document.ormd
+
+# Convert from various formats
+ormd convert document.pdf document.ormd       # PDF extraction
+ormd convert notes.md notes.ormd              # Markdown import
+ormd convert notes.txt notes.ormd             # Plain text import
+```
+
+**Implementation status**: ✅ Working with PDF text extraction, metadata preservation
+
+### 5.2 Validation and Quality Assurance
+
+```bash
+# Comprehensive validation
+ormd validate document.ormd --verbose
+
+# Auto-sync metadata  
+ormd update document.ormd --dry-run           # Preview changes
+ormd update document.ormd                     # Apply updates
+```
+
+**Validation checks**:
+* ✅ Version tag presence
+* ✅ Required front-matter fields
+* ✅ YAML schema compliance
+* ✅ Link reference consistency (link references ↔ `links` definitions)
+* ✅ Asset existence verification
+
+### 5.3 Packaging System
+
+```bash
+# Pack for distribution
+ormd pack content.ormd meta.json --out package.ormd
+
+# Unpack for editing
+ormd unpack package.ormd --out-dir ./unpacked
+```
+
+**Package structure**:
+```
+package.ormd/
+├── content.ormd      # Main document
+├── meta.json         # JSON-LD metadata
+├── assets/           # Embedded files
+└── render.css        # Default styling
+```
+
+**Implementation status**: ✅ Full packaging/unpackaging with validation
+
+### 5.4 Rendering and Interaction
+
+```bash
+# Generate static HTML
+ormd render document.ormd --out document.html
+
+# Interactive viewing  
+ormd open document.ormd                       # Read-only with sidebar
+
+# Web-based editing
+ormd edit document.ormd                       # Full editor interface
+```
+
+**Rendering features**:
+* ✅ Semantic link highlighting
+* ✅ Document relationship graph visualization  
+* ✅ Collapsible sidebar with metadata
+* ✅ Raw `.ormd` source view
+* ✅ Live link validation
+* ✅ Mobile-responsive design
+
+## 6. Format Conversion {#format-conversion}
+
+### 6.1 PDF Import
+
+The implementation supports intelligent PDF conversion:
+
+```bash
+ormd convert research-paper.pdf research-paper.ormd
+```
+
+**Features**:
+* ✅ Text extraction with layout analysis
+* ✅ Metadata extraction (title, authors, dates, keywords)
+* ✅ Paragraph structure preservation
+* ⚠️ Image-based PDFs require manual review
+
+### 6.2 Markdown Import
+
+Existing Markdown files can be imported with front-matter preservation:
+
+```bash
+ormd convert existing.md converted.ormd
+```
+
+**Features**:
+* ✅ Preserves existing YAML front-matter
+* ✅ Merges with ORMD schema requirements
+* ✅ Handles Jekyll/Hugo/Obsidian formats
+* ✅ Adds conversion metadata
+
+## 7. Validation Rules {#validation-rules}
+
+An ORMD validator **MUST** check:
+
+1. ✅ Presence and correct format of `&lt;!-- ormd:0.1 --&gt;` version tag
+2. ✅ Valid YAML front-matter with required fields (`title`, `authors`, `links`)
+3. ✅ Schema compliance for all front-matter fields
+4. ✅ Every link reference has a corresponding `links` entry
+5. ✅ All assets in `asset_ids` exist on disk (for local references)
+6. ✅ For packages: proper ZIP structure with `content.ormd`
+
+**Implementation status**: ✅ All validation rules implemented with clear error messages
+
+## 8. Example: Basic Document {#example-basic-document}
+
+The [[example-basic]] demonstrates core ORMD functionality:
+
+```ormd
+&lt;!-- ormd:0.1 --&gt;
++++
+title: Basic ORMD Document
+authors:
+  - Daniel Pace
+links:
+  - id: goal
+    rel: supports
+    to: "#objective"
+dates:
+  created: '2025-06-02T00:00:00Z'
+  modified: '2025-06-02T00:00:00Z'
++++
+
+# Basic ORMD Document
+
+This document demonstrates the core ORMD format with semantic links.
+
+Our primary [[goal]] is to create readable, relational documents.
+
+## Objective {#objective}
+
+Open. Relational. Markdown.
+```
+
+## 9. Example: Complex Document {#example-complex-document}
+
+See the [[example-complex]] climate change analysis in the CLI examples directory, which demonstrates:
+
+* ✅ Multiple authors with affiliations
+* ✅ Complex link relationships (`supports`, `refutes`, `related`)
+* ✅ Organized metadata namespaces
+* ✅ Auto-maintained metrics
+* ✅ Cross-references throughout the document
+
+## 10. Implementation Status Summary {#implementation-status-summary}
+
+### ✅ Fully Implemented
+- Complete CLI with all major commands
+- YAML front-matter parsing with both `+++` and `---` delimiters
+- Semantic link validation and consistency checking
+- PDF/Markdown/text conversion with metadata extraction
+- Interactive HTML rendering with relationship visualization
+- ZIP packaging system
+- Auto-updating metadata sync
+- Comprehensive validation with helpful error messages
+
+### ⚠️ Partially Implemented  
+- Cryptographic signing (structure ready, signature validation pending)
+- Asset embedding optimization
+- Advanced PDF layout analysis
+
+### 📋 Future Versions (v0.2+)
+- CRDT change-feed embedding and merge rules
+- Inline commenting and annotation syntax
+- Real-time collaborative editing
+- Plugin architecture for custom relation types
+
+## 11. Migration from v0.1 Draft {#migration-from-v01-draft}
+
+Documents using the original `+++meta` block syntax must be migrated:
+
+```bash
+# The update command includes migration utilities
+ormd update legacy-document.ormd --verbose
+```
+
+The migration moves all `+++meta` block content into the appropriate front-matter namespaces.
+
+## 12. Conformance and Testing {#conformance-and-testing}
+
+The implementation includes:
+* ✅ Comprehensive test suite with example documents
+* ✅ CLI integration tests for all commands  
+* ✅ Validation test vectors (both valid and invalid documents)
+* ✅ Conversion accuracy tests for PDF/Markdown import
+
+**Validator command**: `ormd validate` with detailed Phase 1 compliance checking
+
+---
+
+This specification reflects the **working implementation** of ORMD 0.1, not just theoretical design. All marked features have been tested and are available in the current CLI release. </pre>
+      </div>
+      <div id="panel-graph" class="panel">
+        <h3>Document Graph</h3>
+        <div id="graph-container" style="width:100%;height:400px;"></div>
+      </div>
+      <div id="panel-history" class="panel">
+        <h3>Change History</h3>
+        <div id="history-content"></div>
+      </div>
+    </div>
+    <div id="main-doc">
+      <h1 id="ormd-01-specification-implementation-update">ORMD 0.1 Specification (Implementation Update)<a class="headerlink" href="#ormd-01-specification-implementation-update" title="Permanent link">&para;</a></h1>
+<p><strong>Version:</strong> 0.1-implementation | <strong>Date:</strong> 2025-06-02</p>
+<hr />
+<h2 id="overview">1. Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Open Relational Markdown (<code>.ormd</code>) 0.1 is a working specification with a complete implementation that:</p>
+<ul>
+<li>Extends CommonMark with a lightweight relational layer using <a href="#overview" class="ormd-link ormd-link-supports">goal</a> syntax</li>
+<li>Defines a comprehensive <a href="#front-matter-structure" class="ormd-link ormd-link-supports">front-matter-schema</a> with organized namespaces</li>
+<li>Provides both plain-text and ZIP-packed <a href="#cli-implementation" class="ormd-link ormd-link-supports">packaging-system</a> options</li>
+<li>Includes a full-featured CLI with <a href="#validation-rules" class="ormd-link ormd-link-supports">validation-rules</a>, <a href="#format-conversion" class="ormd-link ormd-link-supports">conversion-support</a>, and interactive editing</li>
+<li>Supports web-based <a href="#cli-implementation" class="ormd-link ormd-link-supports">rendering-features</a> with semantic link visualization</li>
+</ul>
+<p>This update reflects what has actually been built and tested, not just planned features.</p>
+<h2 id="file-version-tag">2. File Version Tag<a class="headerlink" href="#file-version-tag" title="Permanent link">&para;</a></h2>
+<p>Every <code>.ormd</code> file <strong>MUST</strong> begin with an HTML comment version marker:</p>
+<div class="codehilite"><pre><span></span><code>
+</code></pre></div>
+
+<ul>
+<li>Ensures toolchains can detect and validate against the correct spec</li>
+<li><strong>Implementation status</strong>: ✅ Enforced by validator and required by all CLI commands</li>
+</ul>
+<h2 id="front-matter-structure">3. Front-Matter Structure<a class="headerlink" href="#front-matter-structure" title="Permanent link">&para;</a></h2>
+<h3 id="31-delimiter-support">3.1 Delimiter Support<a class="headerlink" href="#31-delimiter-support" title="Permanent link">&para;</a></h3>
+<p>ORMD supports both <code>+++</code> and <code>---</code> delimiters for YAML front-matter:</p>
+<div class="codehilite"><pre><span></span><code>+++
+title: Example with Plus Delimiters
+authors:
+  - Alice L.
+links: []
++++
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code>---
+title: Example with Dash Delimiters  
+authors:
+  - Alice L.
+links: []
+---
+</code></pre></div>
+
+<p><strong>Implementation status</strong>: ✅ Both formats fully supported with robust state machine parser</p>
+<h3 id="32-required-fields">3.2 Required Fields<a class="headerlink" href="#32-required-fields" title="Permanent link">&para;</a></h3>
+<p>Every ORMD document <strong>MUST</strong> include these front-matter fields:</p>
+<ul>
+<li><code>title</code> — Document title (non-empty string)</li>
+<li><code>authors</code> — List of authors (non-empty list, can be strings or objects)</li>
+<li><code>links</code> — List of semantic link definitions (can be empty list)</li>
+</ul>
+<h3 id="33-organized-metadata-namespaces">3.3 Organized Metadata Namespaces<a class="headerlink" href="#33-organized-metadata-namespaces" title="Permanent link">&para;</a></h3>
+<p>The implementation organizes optional metadata into logical namespaces:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Timestamp management</span>
+<span class="nt">dates</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">created</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;2025-06-02T00:00:00.000000+00:00&#39;</span>
+<span class="w">  </span><span class="nt">modified</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;2025-06-02T00:00:00.000000+00:00&#39;</span>
+
+<span class="c1"># Document metrics (auto-updated)</span>
+<span class="nt">metrics</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">word_count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1450</span>
+<span class="w">  </span><span class="nt">reading_time</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;7</span><span class="nv"> </span><span class="s">min&#39;</span>
+
+<span class="c1"># Access control</span>
+<span class="nt">permissions</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;published&#39;</span><span class="w">    </span><span class="c1"># draft, published, private</span>
+<span class="w">  </span><span class="nt">editable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">signed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+
+<h3 id="34-auto-maintained-fields">3.4 Auto-Maintained Fields<a class="headerlink" href="#34-auto-maintained-fields" title="Permanent link">&para;</a></h3>
+<p>The <a href="#cli-implementation" class="ormd-link ormd-link-supports">cli-commands</a> update command automatically maintains:</p>
+<ul>
+<li><code>link_ids</code> — List of all link references found in document body</li>
+<li><code>asset_ids</code> — List of all referenced assets (images, files)</li>
+<li><code>dates.modified</code> — Updated on each document change</li>
+<li><code>metrics.word_count</code> — Recalculated word count</li>
+<li><code>metrics.reading_time</code> — Estimated reading time</li>
+</ul>
+<p><strong>Implementation status</strong>: ✅ Working with <code>ormd update</code> command</p>
+<h3 id="35-legacy-meta-block-migration">3.5 Legacy +++meta Block Migration<a class="headerlink" href="#35-legacy-meta-block-migration" title="Permanent link">&para;</a></h3>
+<p><strong>Breaking change</strong>: The original specification's <code>+++meta</code> blocks are <strong>no longer supported</strong>. All metadata must be in the YAML front-matter. The implementation includes migration utilities for legacy documents.</p>
+<h2 id="relational-layer">4. Relational Layer<a class="headerlink" href="#relational-layer" title="Permanent link">&para;</a></h2>
+<h3 id="41-link-definitions">4.1 Link Definitions<a class="headerlink" href="#41-link-definitions" title="Permanent link">&para;</a></h3>
+<p>Links are defined in the front-matter <code>links</code> field:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">links</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">methodology-support</span>
+<span class="w">    </span><span class="nt">rel</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">supports</span><span class="w">  </span>
+<span class="w">    </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#methodology&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">external-source</span>
+<span class="w">    </span><span class="nt">rel</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">related</span>
+<span class="w">    </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://example.com/paper&quot;</span>
+</code></pre></div>
+
+<p><strong>Supported relation types</strong>: <code>supports</code>, <code>refutes</code>, <code>related</code>, and custom types.</p>
+<h3 id="42-inline-link-references">4.2 Inline Link References<a class="headerlink" href="#42-inline-link-references" title="Permanent link">&para;</a></h3>
+<p>Use double square brackets around link IDs anywhere in the document body:</p>
+<div class="codehilite"><pre><span></span><code>Our &lt;a href=&quot;#validation-rules&quot; class=&quot;ormd-link ormd-link-supports&quot;&gt;methodology-support&lt;/a&gt; follows established protocols.
+However, there are &lt;a href=&quot;#migration-from-v01-draft&quot; class=&quot;ormd-link ormd-link-related&quot;&gt;counter-argument&lt;/a&gt; considerations to address.
+</code></pre></div>
+
+<p><strong>Implementation status</strong>: ✅ Full validation ensures all link references have corresponding link definitions</p>
+<h2 id="cli-implementation">5. CLI Implementation<a class="headerlink" href="#cli-implementation" title="Permanent link">&para;</a></h2>
+<p>The ORMD CLI provides comprehensive document lifecycle management:</p>
+<h3 id="51-document-creation-and-conversion">5.1 Document Creation and Conversion<a class="headerlink" href="#51-document-creation-and-conversion" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Create new document</span>
+ormd<span class="w"> </span>create<span class="w"> </span>my-document.ormd
+
+<span class="c1"># Convert from various formats</span>
+ormd<span class="w"> </span>convert<span class="w"> </span>document.pdf<span class="w"> </span>document.ormd<span class="w">       </span><span class="c1"># PDF extraction</span>
+ormd<span class="w"> </span>convert<span class="w"> </span>notes.md<span class="w"> </span>notes.ormd<span class="w">              </span><span class="c1"># Markdown import</span>
+ormd<span class="w"> </span>convert<span class="w"> </span>notes.txt<span class="w"> </span>notes.ormd<span class="w">             </span><span class="c1"># Plain text import</span>
+</code></pre></div>
+
+<p><strong>Implementation status</strong>: ✅ Working with PDF text extraction, metadata preservation</p>
+<h3 id="52-validation-and-quality-assurance">5.2 Validation and Quality Assurance<a class="headerlink" href="#52-validation-and-quality-assurance" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Comprehensive validation</span>
+ormd<span class="w"> </span>validate<span class="w"> </span>document.ormd<span class="w"> </span>--verbose
+
+<span class="c1"># Auto-sync metadata  </span>
+ormd<span class="w"> </span>update<span class="w"> </span>document.ormd<span class="w"> </span>--dry-run<span class="w">           </span><span class="c1"># Preview changes</span>
+ormd<span class="w"> </span>update<span class="w"> </span>document.ormd<span class="w">                     </span><span class="c1"># Apply updates</span>
+</code></pre></div>
+
+<p><strong>Validation checks</strong>:
+* ✅ Version tag presence
+* ✅ Required front-matter fields
+* ✅ YAML schema compliance
+* ✅ Link reference consistency (link references ↔ <code>links</code> definitions)
+* ✅ Asset existence verification</p>
+<h3 id="53-packaging-system">5.3 Packaging System<a class="headerlink" href="#53-packaging-system" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Pack for distribution</span>
+ormd<span class="w"> </span>pack<span class="w"> </span>content.ormd<span class="w"> </span>meta.json<span class="w"> </span>--out<span class="w"> </span>package.ormd
+
+<span class="c1"># Unpack for editing</span>
+ormd<span class="w"> </span>unpack<span class="w"> </span>package.ormd<span class="w"> </span>--out-dir<span class="w"> </span>./unpacked
+</code></pre></div>
+
+<p><strong>Package structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">package</span><span class="p">.</span><span class="nx">ormd</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="nx">content</span><span class="p">.</span><span class="nx">ormd</span><span class="w">      </span><span class="err">#</span><span class="w"> </span><span class="nx">Main</span><span class="w"> </span><span class="nx">document</span>
+<span class="err">├──</span><span class="w"> </span><span class="nx">meta</span><span class="p">.</span><span class="nx">json</span><span class="w">         </span><span class="err">#</span><span class="w"> </span><span class="nx">JSON</span><span class="o">-</span><span class="nx">LD</span><span class="w"> </span><span class="nx">metadata</span>
+<span class="err">├──</span><span class="w"> </span><span class="nx">assets</span><span class="o">/</span><span class="w">           </span><span class="err">#</span><span class="w"> </span><span class="nx">Embedded</span><span class="w"> </span><span class="nx">files</span>
+<span class="err">└──</span><span class="w"> </span><span class="nx">render</span><span class="p">.</span><span class="nx">css</span><span class="w">        </span><span class="err">#</span><span class="w"> </span><span class="nx">Default</span><span class="w"> </span><span class="nx">styling</span>
+</code></pre></div>
+
+<p><strong>Implementation status</strong>: ✅ Full packaging/unpackaging with validation</p>
+<h3 id="54-rendering-and-interaction">5.4 Rendering and Interaction<a class="headerlink" href="#54-rendering-and-interaction" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Generate static HTML</span>
+ormd<span class="w"> </span>render<span class="w"> </span>document.ormd<span class="w"> </span>--out<span class="w"> </span>document.html
+
+<span class="c1"># Interactive viewing  </span>
+ormd<span class="w"> </span>open<span class="w"> </span>document.ormd<span class="w">                       </span><span class="c1"># Read-only with sidebar</span>
+
+<span class="c1"># Web-based editing</span>
+ormd<span class="w"> </span>edit<span class="w"> </span>document.ormd<span class="w">                       </span><span class="c1"># Full editor interface</span>
+</code></pre></div>
+
+<p><strong>Rendering features</strong>:
+* ✅ Semantic link highlighting
+* ✅ Document relationship graph visualization<br />
+* ✅ Collapsible sidebar with metadata
+* ✅ Raw <code>.ormd</code> source view
+* ✅ Live link validation
+* ✅ Mobile-responsive design</p>
+<h2 id="format-conversion">6. Format Conversion<a class="headerlink" href="#format-conversion" title="Permanent link">&para;</a></h2>
+<h3 id="61-pdf-import">6.1 PDF Import<a class="headerlink" href="#61-pdf-import" title="Permanent link">&para;</a></h3>
+<p>The implementation supports intelligent PDF conversion:</p>
+<div class="codehilite"><pre><span></span><code>ormd<span class="w"> </span>convert<span class="w"> </span>research-paper.pdf<span class="w"> </span>research-paper.ormd
+</code></pre></div>
+
+<p><strong>Features</strong>:
+* ✅ Text extraction with layout analysis
+* ✅ Metadata extraction (title, authors, dates, keywords)
+* ✅ Paragraph structure preservation
+* ⚠️ Image-based PDFs require manual review</p>
+<h3 id="62-markdown-import">6.2 Markdown Import<a class="headerlink" href="#62-markdown-import" title="Permanent link">&para;</a></h3>
+<p>Existing Markdown files can be imported with front-matter preservation:</p>
+<div class="codehilite"><pre><span></span><code>ormd<span class="w"> </span>convert<span class="w"> </span>existing.md<span class="w"> </span>converted.ormd
+</code></pre></div>
+
+<p><strong>Features</strong>:
+* ✅ Preserves existing YAML front-matter
+* ✅ Merges with ORMD schema requirements
+* ✅ Handles Jekyll/Hugo/Obsidian formats
+* ✅ Adds conversion metadata</p>
+<h2 id="validation-rules">7. Validation Rules<a class="headerlink" href="#validation-rules" title="Permanent link">&para;</a></h2>
+<p>An ORMD validator <strong>MUST</strong> check:</p>
+<ol>
+<li>✅ Presence and correct format of <code>&lt;!-- ormd:0.1 --&gt;</code> version tag</li>
+<li>✅ Valid YAML front-matter with required fields (<code>title</code>, <code>authors</code>, <code>links</code>)</li>
+<li>✅ Schema compliance for all front-matter fields</li>
+<li>✅ Every link reference has a corresponding <code>links</code> entry</li>
+<li>✅ All assets in <code>asset_ids</code> exist on disk (for local references)</li>
+<li>✅ For packages: proper ZIP structure with <code>content.ormd</code></li>
+</ol>
+<p><strong>Implementation status</strong>: ✅ All validation rules implemented with clear error messages</p>
+<h2 id="example-basic-document">8. Example: Basic Document<a class="headerlink" href="#example-basic-document" title="Permanent link">&para;</a></h2>
+<p>The <a href="#example-basic-document" class="ormd-link ormd-link-supports">example-basic</a> demonstrates core ORMD functionality:</p>
+<div class="codehilite"><pre><span></span><code>+++
+title:<span class="w"> </span>Basic<span class="w"> </span>ORMD<span class="w"> </span>Document
+authors:
+<span class="w">  </span>-<span class="w"> </span>Daniel<span class="w"> </span>Pace
+links:
+<span class="w">  </span>-<span class="w"> </span>id:<span class="w"> </span>goal
+<span class="w">    </span>rel:<span class="w"> </span>supports
+<span class="w">    </span>to:<span class="w"> </span>&quot;#objective&quot;
+dates:
+<span class="w">  </span>created:<span class="w"> </span>&#39;2025-06-02T00:00:00Z&#39;
+<span class="w">  </span>modified:<span class="w"> </span>&#39;2025-06-02T00:00:00Z&#39;
++++
+
+#<span class="w"> </span>Basic<span class="w"> </span>ORMD<span class="w"> </span>Document
+
+This<span class="w"> </span>document<span class="w"> </span>demonstrates<span class="w"> </span>the<span class="w"> </span>core<span class="w"> </span>ORMD<span class="w"> </span>format<span class="w"> </span>with<span class="w"> </span>semantic<span class="w"> </span>links.
+
+Our<span class="w"> </span>primary<span class="w"> </span><span class="nt">&lt;a</span><span class="w"> </span><span class="na">href=</span><span class="s">&quot;#overview&quot;</span><span class="w"> </span><span class="na">class=</span><span class="s">&quot;ormd-link ormd-link-supports&quot;</span><span class="nt">&gt;</span>goal<span class="nt">&lt;/a&gt;</span><span class="w"> </span>is<span class="w"> </span>to<span class="w"> </span>create<span class="w"> </span>readable,<span class="w"> </span>relational<span class="w"> </span>documents.
+
+##<span class="w"> </span>Objective<span class="w"> </span>{#objective}
+
+Open.<span class="w"> </span>Relational.<span class="w"> </span>Markdown.
+</code></pre></div>
+
+<h2 id="example-complex-document">9. Example: Complex Document<a class="headerlink" href="#example-complex-document" title="Permanent link">&para;</a></h2>
+<p>See the <a href="#example-complex-document" class="ormd-link ormd-link-supports">example-complex</a> climate change analysis in the CLI examples directory, which demonstrates:</p>
+<ul>
+<li>✅ Multiple authors with affiliations</li>
+<li>✅ Complex link relationships (<code>supports</code>, <code>refutes</code>, <code>related</code>)</li>
+<li>✅ Organized metadata namespaces</li>
+<li>✅ Auto-maintained metrics</li>
+<li>✅ Cross-references throughout the document</li>
+</ul>
+<h2 id="implementation-status-summary">10. Implementation Status Summary<a class="headerlink" href="#implementation-status-summary" title="Permanent link">&para;</a></h2>
+<h3 id="fully-implemented">✅ Fully Implemented<a class="headerlink" href="#fully-implemented" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Complete CLI with all major commands</li>
+<li>YAML front-matter parsing with both <code>+++</code> and <code>---</code> delimiters</li>
+<li>Semantic link validation and consistency checking</li>
+<li>PDF/Markdown/text conversion with metadata extraction</li>
+<li>Interactive HTML rendering with relationship visualization</li>
+<li>ZIP packaging system</li>
+<li>Auto-updating metadata sync</li>
+<li>Comprehensive validation with helpful error messages</li>
+</ul>
+<h3 id="partially-implemented">⚠️ Partially Implemented<a class="headerlink" href="#partially-implemented" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Cryptographic signing (structure ready, signature validation pending)</li>
+<li>Asset embedding optimization</li>
+<li>Advanced PDF layout analysis</li>
+</ul>
+<h3 id="future-versions-v02">📋 Future Versions (v0.2+)<a class="headerlink" href="#future-versions-v02" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CRDT change-feed embedding and merge rules</li>
+<li>Inline commenting and annotation syntax</li>
+<li>Real-time collaborative editing</li>
+<li>Plugin architecture for custom relation types</li>
+</ul>
+<h2 id="migration-from-v01-draft">11. Migration from v0.1 Draft<a class="headerlink" href="#migration-from-v01-draft" title="Permanent link">&para;</a></h2>
+<p>Documents using the original <code>+++meta</code> block syntax must be migrated:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># The update command includes migration utilities</span>
+ormd<span class="w"> </span>update<span class="w"> </span>legacy-document.ormd<span class="w"> </span>--verbose
+</code></pre></div>
+
+<p>The migration moves all <code>+++meta</code> block content into the appropriate front-matter namespaces.</p>
+<h2 id="conformance-and-testing">12. Conformance and Testing<a class="headerlink" href="#conformance-and-testing" title="Permanent link">&para;</a></h2>
+<p>The implementation includes:
+* ✅ Comprehensive test suite with example documents
+* ✅ CLI integration tests for all commands<br />
+* ✅ Validation test vectors (both valid and invalid documents)
+* ✅ Conversion accuracy tests for PDF/Markdown import</p>
+<p><strong>Validator command</strong>: <code>ormd validate</code> with detailed Phase 1 compliance checking</p>
+<hr />
+<p>This specification reflects the <strong>working implementation</strong> of ORMD 0.1, not just theoretical design. All marked features have been tested and are available in the current CLI release.</p>
+    </div>
+  </div>
+  <script>
+    // Sidebar toggle logic
+    const sidebar = document.getElementById('sidebar');
+    const collapseBtn = document.getElementById('collapse-btn');
+    collapseBtn.onclick = () => {
+      sidebar.classList.toggle('collapsed');
+    };
+    
+    // Panel switching logic
+    const panels = ['raw', 'graph', 'history'];
+    let ormdLinksData = null;
+    let graphRendered = false;
+    
+    panels.forEach(name => {
+      document.getElementById('toggle-' + name).onclick = () => {
+        panels.forEach(n => {
+          document.getElementById('toggle-' + n).classList.remove('active');
+          document.getElementById('panel-' + n).classList.remove('active');
+        });
+        document.getElementById('toggle-' + name).classList.add('active');
+        document.getElementById('panel-' + name).classList.add('active');
+        
+        // Render the graph when the graph panel is activated
+        if (name === 'graph' && ormdLinksData && !graphRendered) {
+          const gc = document.getElementById('graph-container');
+          gc.innerHTML = '';
+          renderGraph(ormdLinksData);
+          graphRendered = true;
+        }
+      };
+    });
+    
+    // Smooth scrolling for anchor links
+    document.addEventListener('click', function(e) {
+      if (e.target.tagName === 'A' && e.target.getAttribute('href').startsWith('#')) {
+        e.preventDefault();
+        const targetId = e.target.getAttribute('href').substring(1);
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth' });
+          // Highlight the target briefly
+          targetElement.style.backgroundColor = '#004080';
+          setTimeout(() => {
+            targetElement.style.backgroundColor = '';
+          }, 1000);
+        }
+      }
+    });
+    
+    // D3.js graph rendering
+    function renderGraph(links) {
+      ormdLinksData = links;
+      const width = document.getElementById('graph-container').clientWidth;
+      const height = 400;
+      const svg = d3.select('#graph-container').append('svg')
+        .attr('width', width)
+        .attr('height', height);
+        
+      const nodes = links.reduce((acc, l) => {
+        acc.add(l.id);
+        acc.add(l.to);
+        return acc;
+      }, new Set());
+      
+      const nodeData = Array.from(nodes).map(id => ({id}));
+      const linkData = links.map(l => ({source: l.id, target: l.to, rel: l.rel}));
+      
+      const simulation = d3.forceSimulation(nodeData)
+        .force('link', d3.forceLink(linkData).id(d => d.id).distance(80))
+        .force('charge', d3.forceManyBody().strength(-200))
+        .force('center', d3.forceCenter(width/2, height/2));
+        
+      const link = svg.append('g')
+        .attr('stroke', '#999')
+        .attr('stroke-opacity', 0.6)
+        .selectAll('line')
+        .data(linkData)
+        .enter().append('line')
+        .attr('stroke-width', 2);
+        
+      const node = svg.append('g')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1.5)
+        .selectAll('circle')
+        .data(nodeData)
+        .enter().append('circle')
+        .attr('r', 18)
+        .attr('fill', '#1976d2');
+        
+      const label = svg.append('g')
+        .selectAll('text')
+        .data(nodeData)
+        .enter().append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dy', '.35em')
+        .attr('fill', '#fff')
+        .text(d => d.id);
+        
+      simulation.on('tick', () => {
+        link
+          .attr('x1', d => d.source.x)
+          .attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x)
+          .attr('y2', d => d.target.y);
+        node
+          .attr('cx', d => d.x)
+          .attr('cy', d => d.y);
+        label
+          .attr('x', d => d.x)
+          .attr('y', d => d.y);
+      });
+    }
+    
+    // renderGraph placeholder - will be replaced with actual data
+    renderGraph([{"id": "cli-commands", "rel": "supports", "to": "#cli-implementation"}, {"id": "front-matter-schema", "rel": "supports", "to": "#front-matter-structure"}, {"id": "validation-rules", "rel": "supports", "to": "#validation-rules"}, {"id": "packaging-system", "rel": "supports", "to": "#cli-implementation"}, {"id": "rendering-features", "rel": "supports", "to": "#cli-implementation"}, {"id": "conversion-support", "rel": "supports", "to": "#format-conversion"}, {"id": "example-basic", "rel": "supports", "to": "#example-basic-document"}, {"id": "example-complex", "rel": "supports", "to": "#example-complex-document"}, {"id": "goal", "rel": "supports", "to": "#overview"}, {"id": "counter-argument", "rel": "related", "to": "#migration-from-v01-draft"}, {"id": "methodology-support", "rel": "supports", "to": "#validation-rules"}]);
+  </script>
+</body>
+</html>

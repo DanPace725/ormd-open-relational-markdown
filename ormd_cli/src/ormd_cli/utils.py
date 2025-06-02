@@ -14,6 +14,7 @@ HTML_TEMPLATE = '''
       font-family: system-ui, sans-serif;
       background: #121212;
       color: #e0e0e0;
+      scroll-behavior: smooth;
     }}
     #container {{
       display: flex;
@@ -91,47 +92,139 @@ HTML_TEMPLATE = '''
       min-width: 0;
       color: #e0e0e0;
     }}
-    pre, code {{
-      background: #22272e;
-      border: 1px solid #373e47;
-      border-radius: 4px;
-      padding: 8px;
-      font-size: 0.95em;
+    
+    /* Enhanced Code Block Styles */
+    pre {{
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.45;
       overflow-x: auto;
       color: #c9d1d9;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      margin: 16px 0;
     }}
+    
+    code {{
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-size: 0.9em;
+      color: #f85149;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }}
+    
+    pre code {{
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: inherit;
+      border-radius: 0;
+    }}
+    
+    /* Syntax highlighting for common languages */
+    .codehilite .k {{ color: #ff7b72; }} /* keyword */
+    .codehilite .s {{ color: #a5d6ff; }} /* string */
+    .codehilite .nb {{ color: #79c0ff; }} /* builtin */
+    .codehilite .nf {{ color: #d2a8ff; }} /* function */
+    .codehilite .c {{ color: #8b949e; }} /* comment */
+    .codehilite .mi {{ color: #79c0ff; }} /* number */
+    .codehilite .o {{ color: #ff7b72; }} /* operator */
+    
+    /* YAML/ORMD specific highlighting */
+    .language-yaml .na {{ color: #79c0ff; }} /* attribute name */
+    .language-yaml .s {{ color: #a5d6ff; }} /* string */
+    .language-ormd .nc {{ color: #f85149; }} /* comment tag */
+    
     .panel h3 {{
       color: #e0e0e0;
       border-bottom: 1px solid #373e47;
       padding-bottom: 8px;
     }}
     
-    /* ORMD Link Styles */
+    /* ORMD Link Styles - Enhanced for dark theme */
     .ormd-link {{ 
-      padding: 2px 6px; 
+      padding: 3px 8px; 
       border-radius: 4px; 
-      text-decoration: underline; 
+      text-decoration: none; 
       font-weight: 500; 
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }}
+    .ormd-link:hover {{
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }}
     .ormd-link-supports {{ 
-      background: #e3f6e3; 
-      color: #217a21; 
-      border: 1px solid #b6e6b6; 
+      background: #1a4d1a; 
+      color: #7dd87d; 
+      border-color: #4d7c4d; 
+    }}
+    .ormd-link-supports:hover {{
+      background: #2e6b2e;
+      color: #a3e8a3;
     }}
     .ormd-link-refutes {{ 
-      background: #ffeaea; 
-      color: #b80000; 
-      border: 1px solid #ffb3b3; 
+      background: #4d1a1a; 
+      color: #ff7d7d; 
+      border-color: #7c4d4d; 
+    }}
+    .ormd-link-refutes:hover {{
+      background: #6b2e2e;
+      color: #ffa3a3;
     }}
     .ormd-link-related {{ 
-      background: #eaf4ff; 
-      color: #1a4d80; 
-      border: 1px solid #b3d1ff; 
+      background: #1a3d4d; 
+      color: #7dc7ff; 
+      border-color: #4d6d7c; 
+    }}
+    .ormd-link-related:hover {{
+      background: #2e576b;
+      color: #a3d8ff;
     }}
     .ormd-link-undefined {{ 
-      background: #f9e6e6; 
-      color: #a94442; 
-      border: 1px solid #e4b9b9; 
+      background: #4d3d1a; 
+      color: #ffb366; 
+      border-color: #7c6d4d; 
+    }}
+    .ormd-link-undefined:hover {{
+      background: #6b562e;
+      color: #ffc999;
+    }}
+
+    /* Main content typography improvements */
+    #main-doc h1, #main-doc h2, #main-doc h3, #main-doc h4, #main-doc h5, #main-doc h6 {{
+      color: #ffffff;
+      margin-top: 24px;
+      margin-bottom: 16px;
+      line-height: 1.25;
+    }}
+    
+    #main-doc h1 {{ border-bottom: 1px solid #30363d; padding-bottom: 10px; }}
+    #main-doc h2 {{ border-bottom: 1px solid #30363d; padding-bottom: 8px; }}
+    
+    #main-doc p {{
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }}
+    
+    #main-doc ul, #main-doc ol {{
+      padding-left: 2em;
+      margin-bottom: 16px;
+    }}
+    
+    #main-doc li {{
+      margin-bottom: 4px;
+    }}
+    
+    #main-doc blockquote {{
+      border-left: 4px solid #30363d;
+      padding-left: 16px;
+      margin: 16px 0;
+      color: #8b949e;
     }}
 
     @media (max-width: 700px) {{
@@ -214,6 +307,23 @@ HTML_TEMPLATE = '''
       }};
     }});
     
+    // Smooth scrolling for anchor links
+    document.addEventListener('click', function(e) {{
+      if (e.target.tagName === 'A' && e.target.getAttribute('href').startsWith('#')) {{
+        e.preventDefault();
+        const targetId = e.target.getAttribute('href').substring(1);
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {{
+          targetElement.scrollIntoView({{ behavior: 'smooth' }});
+          // Highlight the target briefly
+          targetElement.style.backgroundColor = '#004080';
+          setTimeout(() => {{
+            targetElement.style.backgroundColor = '';
+          }}, 1000);
+        }}
+      }}
+    }});
+    
     // D3.js graph rendering
     function renderGraph(links) {{
       ormdLinksData = links;
@@ -277,6 +387,9 @@ HTML_TEMPLATE = '''
           .attr('y', d => d.y);
       }});
     }}
+    
+    // renderGraph placeholder - will be replaced with actual data
+    // renderGraph([]);
   </script>
 </body>
 </html>

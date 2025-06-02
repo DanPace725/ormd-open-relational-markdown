@@ -549,8 +549,21 @@ def render(input_file, out):
     body = re.sub(r'\[\[([^\]]+)\]\]', replace_link, body)
     # --- End semantic link rendering ---
 
-    # Render Markdown to HTML
-    main_html = markdown.markdown(body, extensions=['extra', 'toc', 'sane_lists'])
+    # Render Markdown to HTML with syntax highlighting
+    main_html = markdown.markdown(
+        body, 
+        extensions=['extra', 'toc', 'sane_lists', 'codehilite'], 
+        extension_configs={
+            'codehilite': {
+                'css_class': 'codehilite',
+                'guess_lang': True,
+                'use_pygments': True
+            },
+            'toc': {
+                'permalink': True
+            }
+        }
+    )
 
     # Prepare history info from meta.json if available
     if meta:
@@ -753,8 +766,21 @@ def _generate_viewable_html(file_path, raw_ormd, front_matter, body, links, meta
     
     processed_body = re.sub(r'\[\[([^\]]+)\]\]', replace_link, body)
     
-    # Render Markdown to HTML
-    main_html = markdown.markdown(processed_body, extensions=['extra', 'toc', 'sane_lists'])
+    # Render Markdown to HTML with syntax highlighting
+    main_html = markdown.markdown(
+        processed_body, 
+        extensions=['extra', 'toc', 'sane_lists', 'codehilite'], 
+        extension_configs={
+            'codehilite': {
+                'css_class': 'codehilite',
+                'guess_lang': True,
+                'use_pygments': True
+            },
+            'toc': {
+                'permalink': True
+            }
+        }
+    )
     
     # Prepare history info from meta.json if available
     history = ''
@@ -811,8 +837,21 @@ def _generate_editable_html(file_path, raw_ormd, front_matter, body, links, meta
     
     processed_body = re.sub(r'\[\[([^\]]+)\]\]', replace_link, body)
     
-    # Render Markdown to HTML
-    main_html = markdown.markdown(processed_body, extensions=['extra', 'toc', 'sane_lists'])
+    # Render Markdown to HTML with syntax highlighting
+    main_html = markdown.markdown(
+        processed_body, 
+        extensions=['extra', 'toc', 'sane_lists', 'codehilite'], 
+        extension_configs={
+            'codehilite': {
+                'css_class': 'codehilite',
+                'guess_lang': True,
+                'use_pygments': True
+            },
+            'toc': {
+                'permalink': True
+            }
+        }
+    )
     
     # Prepare history info from meta.json if available
     history = ''
@@ -848,6 +887,7 @@ def _generate_editable_html(file_path, raw_ormd, front_matter, body, links, meta
       font-family: system-ui, sans-serif;
       background: #121212;
       color: #e0e0e0;
+      scroll-behavior: smooth;
     }}
     
     /* Top toolbar */
@@ -1028,10 +1068,10 @@ def _generate_editable_html(file_path, raw_ormd, front_matter, body, links, meta
       width: 100%;
       height: 100%;
       min-height: 500px;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      background: #22272e;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      background: #0d1117;
       color: #c9d1d9;
-      border: 1px solid #373e47;
+      border: 1px solid #30363d;
       border-radius: 6px;
       padding: 16px;
       font-size: 14px;
@@ -1042,6 +1082,28 @@ def _generate_editable_html(file_path, raw_ormd, front_matter, body, links, meta
     }}
     
     #editor:focus {{
+      border-color: #0066cc;
+      box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+    }}
+    
+    #editor-split {{
+      width: 100%;
+      height: 100%;
+      min-height: 400px;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      background: #0d1117;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      resize: none;
+      tab-size: 2;
+      outline: none;
+    }}
+    
+    #editor-split:focus {{
       border-color: #0066cc;
       box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
     }}
@@ -1068,42 +1130,133 @@ def _generate_editable_html(file_path, raw_ormd, front_matter, body, links, meta
     .feedback-warning {{ background: #3a2e1e; color: #ff9800; }}
     .feedback-error {{ background: #3a1e1e; color: #f44336; }}
     
-    /* ORMD Link Styles */
-    .ormd-link {{ 
-      padding: 2px 6px; 
-      border-radius: 4px; 
-      text-decoration: underline; 
-      font-weight: 500; 
-    }}
-    .ormd-link-supports {{ 
-      background: #e3f6e3; 
-      color: #217a21; 
-      border: 1px solid #b6e6b6; 
-    }}
-    .ormd-link-refutes {{ 
-      background: #ffeaea; 
-      color: #b80000; 
-      border: 1px solid #ffb3b3; 
-    }}
-    .ormd-link-related {{ 
-      background: #eaf4ff; 
-      color: #1a4d80; 
-      border: 1px solid #b3d1ff; 
-    }}
-    .ormd-link-undefined {{ 
-      background: #f9e6e6; 
-      color: #a94442; 
-      border: 1px solid #e4b9b9; 
-    }}
-    
-    pre, code {{
-      background: #22272e;
-      border: 1px solid #373e47;
-      border-radius: 4px;
-      padding: 8px;
-      font-size: 0.95em;
+    /* Enhanced Code Block Styles - Same as main template */
+    pre {{
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.45;
       overflow-x: auto;
       color: #c9d1d9;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      margin: 16px 0;
+    }}
+    
+    code {{
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-size: 0.9em;
+      color: #f85149;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }}
+    
+    pre code {{
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: inherit;
+      border-radius: 0;
+    }}
+    
+    /* Syntax highlighting for common languages */
+    .codehilite .k {{ color: #ff7b72; }} /* keyword */
+    .codehilite .s {{ color: #a5d6ff; }} /* string */
+    .codehilite .nb {{ color: #79c0ff; }} /* builtin */
+    .codehilite .nf {{ color: #d2a8ff; }} /* function */
+    .codehilite .c {{ color: #8b949e; }} /* comment */
+    .codehilite .mi {{ color: #79c0ff; }} /* number */
+    .codehilite .o {{ color: #ff7b72; }} /* operator */
+    
+    /* YAML/ORMD specific highlighting */
+    .language-yaml .na {{ color: #79c0ff; }} /* attribute name */
+    .language-yaml .s {{ color: #a5d6ff; }} /* string */
+    .language-ormd .nc {{ color: #f85149; }} /* comment tag */
+    
+    /* ORMD Link Styles - Enhanced for dark theme */
+    .ormd-link {{ 
+      padding: 3px 8px; 
+      border-radius: 4px; 
+      text-decoration: none; 
+      font-weight: 500; 
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }}
+    .ormd-link:hover {{
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }}
+    .ormd-link-supports {{ 
+      background: #1a4d1a; 
+      color: #7dd87d; 
+      border-color: #4d7c4d; 
+    }}
+    .ormd-link-supports:hover {{
+      background: #2e6b2e;
+      color: #a3e8a3;
+    }}
+    .ormd-link-refutes {{ 
+      background: #4d1a1a; 
+      color: #ff7d7d; 
+      border-color: #7c4d4d; 
+    }}
+    .ormd-link-refutes:hover {{
+      background: #6b2e2e;
+      color: #ffa3a3;
+    }}
+    .ormd-link-related {{ 
+      background: #1a3d4d; 
+      color: #7dc7ff; 
+      border-color: #4d6d7c; 
+    }}
+    .ormd-link-related:hover {{
+      background: #2e576b;
+      color: #a3d8ff;
+    }}
+    .ormd-link-undefined {{ 
+      background: #4d3d1a; 
+      color: #ffb366; 
+      border-color: #7c6d4d; 
+    }}
+    .ormd-link-undefined:hover {{
+      background: #6b562e;
+      color: #ffc999;
+    }}
+
+    /* Main content typography improvements */
+    #preview-area h1, #preview-area h2, #preview-area h3, #preview-area h4, #preview-area h5, #preview-area h6,
+    #split-preview h1, #split-preview h2, #split-preview h3, #split-preview h4, #split-preview h5, #split-preview h6 {{
+      color: #ffffff;
+      margin-top: 24px;
+      margin-bottom: 16px;
+      line-height: 1.25;
+    }}
+    
+    #preview-area h1, #split-preview h1 {{ border-bottom: 1px solid #30363d; padding-bottom: 10px; }}
+    #preview-area h2, #split-preview h2 {{ border-bottom: 1px solid #30363d; padding-bottom: 8px; }}
+    
+    #preview-area p, #split-preview p {{
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }}
+    
+    #preview-area ul, #preview-area ol, #split-preview ul, #split-preview ol {{
+      padding-left: 2em;
+      margin-bottom: 16px;
+    }}
+    
+    #preview-area li, #split-preview li {{
+      margin-bottom: 4px;
+    }}
+    
+    #preview-area blockquote, #split-preview blockquote {{
+      border-left: 4px solid #30363d;
+      padding-left: 16px;
+      margin: 16px 0;
+      color: #8b949e;
     }}
     
     /* Mobile responsiveness */
@@ -1445,6 +1598,28 @@ def _generate_editable_html(file_path, raw_ormd, front_matter, body, links, meta
         document.getElementById('preview-content');
       
       previewElement.innerHTML = renderedHTML;
+      
+      // Add smooth scrolling for anchor links in preview
+      addSmoothScrolling(previewElement);
+    }}
+    
+    function addSmoothScrolling(container) {{
+      container.addEventListener('click', function(e) {{
+        if (e.target.tagName === 'A' && e.target.getAttribute('href') && e.target.getAttribute('href').startsWith('#')) {{
+          e.preventDefault();
+          const targetId = e.target.getAttribute('href').substring(1);
+          const targetElement = container.querySelector('#' + targetId);
+          if (targetElement) {{
+            targetElement.scrollIntoView({{ behavior: 'smooth' }});
+            // Highlight the target briefly
+            const originalBg = targetElement.style.backgroundColor;
+            targetElement.style.backgroundColor = '#004080';
+            setTimeout(() => {{
+              targetElement.style.backgroundColor = originalBg;
+            }}, 1000);
+          }}
+        }}
+      }});
     }}
     
     function parseORMD(content) {{
@@ -1705,6 +1880,12 @@ def _generate_editable_html(file_path, raw_ormd, front_matter, body, links, meta
       updateCharCount();
       validateContent();
       updatePreview(); // Show initial preview
+      
+      // Add smooth scrolling to initial preview content
+      const previewArea = document.getElementById('preview-content');
+      const splitPreviewArea = document.getElementById('split-preview-content');
+      addSmoothScrolling(previewArea);
+      addSmoothScrolling(splitPreviewArea);
     }});
   </script>
 </body>

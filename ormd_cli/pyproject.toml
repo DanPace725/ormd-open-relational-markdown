@@ -13,6 +13,7 @@ dependencies = [
     "markdown>=3.4",
     "jsonschema>=4.0",
     "pdfminer.six>=20221105", # Added pdfminer.six
+    "pygments>=2.0", # Added for syntax highlighting
 ]
 
 [project.scripts]
