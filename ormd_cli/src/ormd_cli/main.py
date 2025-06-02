@@ -22,17 +22,40 @@ import json # Used by render, open, edit
 # webbrowser, threading, http.server, socketserver, tempfile, socket, os were moved
 from .server import _serve_and_open
 from .html_generator import _generate_viewable_html, _generate_editable_html, generate_render_html
+from .logger import setup_logging, logger # Added
 # get_edit_template, _generate_viewable_html, _generate_editable_html, markdown and re imports removed as logic moved.
 
-@click.group()
-def cli():
-    """ORMD CLI - Tools for Open Relational Markdown"""
-    pass
+@click.group(context_settings=dict(help_option_names=['-h', '--help']))
+@click.option('-v', '--verbose', is_flag=True, help='Enable verbose output (DEBUG level).')
+@click.option('-q', '--quiet', is_flag=True, help='Suppress most output (show CRITICAL errors).')
+@click.pass_context
+def cli(ctx, verbose, quiet):
+    """ORMD CLI - Tools for Open Relational Markdown.
 
-@cli.command()
+    Use -v/--verbose for detailed debug output, or -q/--quiet to suppress all non-critical messages.
+    """
+    ctx.ensure_object(dict)
+    # Store flags for potential direct use, though logger config is primary
+    ctx.obj['VERBOSE'] = verbose
+    ctx.obj['QUIET'] = quiet
+    if quiet and verbose:
+        # Let quiet take precedence as per user requirement, though Click might handle this too
+        # For setup_logging, quiet=True will override verbose=True
+        pass # setup_logging will handle precedence
+    setup_logging(verbose, quiet)
+
+@click.pass_context # New decorator
+@cli.command()     # Existing decorator
 @click.argument('file_path')
-def create(file_path: str):
-    """Create a new ORMD file with minimal front-matter."""
+def create(ctx, file_path: str): # Added ctx
+    """Create a new ORMD file with minimal front-matter.
+
+    Examples:
+    
+      ormd create my_document.ormd
+      ormd create path/to/my_new_report.ormd
+    """
+    logger.debug(f"Attempting to create ORMD file at: {file_path}")
     try:
         p = Path(file_path)
         filename = p.stem
@@ -65,99 +88,172 @@ def create(file_path: str):
         with click.open_file(file_path, 'w', encoding='utf-8') as f:
             f.write(content)
 
-        click.echo(f"{SYMBOLS['success']} Created ORMD file: {file_path}")
+        logger.info(f"{SYMBOLS['success']} Created ORMD file: {file_path}")
 
     except Exception as e:
-        click.echo(f"{SYMBOLS['error']} Failed to create file: {str(e)}")
+        logger.error(f"{SYMBOLS['error']} Failed to create file: {str(e)}")
         # exit(1) removed for click consistency, though it was present in the original create
+@click.pass_context # New decorator
 @cli.command()
 @click.argument('file_path')
-@click.option('--verbose', '-v', is_flag=True, help='Show detailed validation info')
-def validate(file_path, verbose):
-    """Validate an ORMD file against the 0.1 specification with comprehensive Phase 1 checks"""
+# verbose option is now global, remove from here if not specifically overriding global
+# For now, keeping it to see if click handles local vs global context options gracefully
+@click.option('--verbose', '-v', is_flag=True, help='Show detailed validation info (overrides global -v).')
+def validate(ctx, file_path, verbose): # Added ctx, verbose might be from global ctx.obj['VERBOSE']
+    """Validate an ORMD file against the 0.1 specification.
+
+    The -v/--verbose flag (global or command-specific) shows detailed validation info.
+    -q/--quiet will suppress typical success/warning messages if validation passes.
+
+    Examples:
+    
+      ormd validate my_document.ormd
+      ormd -v validate my_document.ormd
+    """
+    logger.debug(f"Validating file: {file_path}")
     validator = ORMDValidator()
     
     is_valid = validator.validate_file(file_path)
     
-    if verbose or not is_valid:
+    # Determine if local verbose was explicitly set, otherwise use global
+    # This assumes the local verbose flag is meant to override the global for this command.
+    # If not, then `verbose_flag = ctx.obj.get('VERBOSE', False)` would be sufficient.
+    verbose_flag = verbose if ctx.get_parameter_source('verbose') == click.core.ParameterSource.COMMAND_LINE else ctx.obj.get('VERBOSE', False)
+
+    if verbose_flag or not is_valid:
         # Show detailed validation summary
-        click.echo(validator.get_validation_summary())
+        logger.info(validator.get_validation_summary())
     else:
         # Show simple success message
         if is_valid and not validator.warnings:
-            click.echo(f"{SYMBOLS['success']} {file_path} is valid ORMD 0.1")
+            logger.info(f"{SYMBOLS['success']} {file_path} is valid ORMD 0.1")
         elif is_valid and validator.warnings:
-            click.echo(f"{SYMBOLS['success']} {file_path} is valid ORMD 0.1 (with {len(validator.warnings)} warning(s))")
-            if not verbose:
-                click.echo("Use --verbose to see warnings")
+            logger.info(f"{SYMBOLS['success']} {file_path} is valid ORMD 0.1 (with {len(validator.warnings)} warning(s))")
+            if not verbose_flag: # Use the determined verbose_flag
+                logger.info("Use --verbose to see warnings")
     
     # Always show warnings even in non-verbose mode if validation passes
-    if is_valid and validator.warnings and not verbose:
-        click.echo(f"{SYMBOLS['warning']}  {len(validator.warnings)} warning(s) - use --verbose for details")
+    if is_valid and validator.warnings and not verbose_flag: # Use the determined verbose_flag
+        logger.warning(f"{SYMBOLS['warning']}  {len(validator.warnings)} warning(s) - use --verbose for details")
     
     if not is_valid:
         exit(1)
 
+@click.pass_context # New decorator
 @cli.command()
 @click.argument('content_file')
 @click.argument('meta_file')
 @click.option('--out', '-o', default='package.ormd', help='Output package file')
 @click.option('--validate/--no-validate', default=True, help='Validate content before packing')
-def pack(content_file, meta_file, out, validate):
-    """Pack content.ormd and meta.json into a single .ormd package"""
+@click.option('--overwrite', is_flag=True, help='Overwrite the output package if it already exists.') # New
+def pack(ctx, content_file, meta_file, out, validate, overwrite): # Added overwrite
+    """Pack content.ormd and meta.json into a single .ormd package.
+
+    Examples:
+    
+      ormd pack content.ormd meta.json
+      ormd pack chapter1.ormd chapter1_meta.json --out my_book.ormd
+      ormd pack document.ormd metadata.json --no-validate
+    """
     
     # Optional validation step
     if validate:
         validator = ORMDValidator()
         if not validator.validate_file(content_file):
-            click.echo(f"{SYMBOLS['error']} Content file failed validation:")
+            logger.error(f"{SYMBOLS['error']} Content file failed validation:")
             for error in validator.errors:
-                click.echo(f"  {SYMBOLS['bullet']} {error}")
-            click.echo("Use --no-validate to skip validation")
+                logger.error(f"  {SYMBOLS['bullet']} {error}")
+            logger.info("Use --no-validate to skip validation")
             exit(1)
+    else:
+        logger.debug("Skipping validation for pack operation.")
+
+    output_package_path_str = out
+    if output_package_path_str == 'package.ormd' and not Path(content_file).name.startswith('package'):
+        output_package_path_str = Path(content_file).stem + ".ormd"
+
+    logger.debug(f"Packing {content_file} and {meta_file} into {output_package_path_str}")
+    output_package_path = Path(output_package_path_str)
+
+    if output_package_path.exists() and not overwrite:
+        logger.error(f"Error: Output package '{output_package_path}' already exists. Use --overwrite to replace it.")
+        return
     
     packager = ORMDPackager()
-    if packager.pack(content_file, meta_file, out):
-        click.echo(f"{SYMBOLS['success']} Created package: {out}")
+    if packager.pack(content_file, meta_file, str(output_package_path)): # Use potentially modified path
+        logger.info(f"{SYMBOLS['success']} Created package: {output_package_path}")
     else:
-        click.echo(f"{SYMBOLS['error']} Failed to create package")
+        logger.error(f"{SYMBOLS['error']} Failed to create package")
         exit(1)
 
+@click.pass_context # New decorator
 @cli.command()
 @click.argument('package_file')
 @click.option('--out-dir', '-d', default='./unpacked', help='Output directory')
-@click.option('--overwrite', is_flag=True, help='Overwrite existing files')
-def unpack(package_file, out_dir, overwrite):
-    """Unpack a .ormd package for editing"""
+@click.option('--overwrite', is_flag=True, help='Overwrite existing files') # Overwrite option is already here
+def unpack(ctx, package_file, out_dir, overwrite): # Added ctx
+    """Unpack a .ormd package for editing.
+
+    Examples:
+    
+      ormd unpack my_package.ormd
+      ormd unpack my_book.ormd --out-dir ./book_files
+      ormd unpack archive.ormd --overwrite
+    """
     from pathlib import Path
+
+    output_dir_str = out_dir
+    if output_dir_str == './unpacked' and Path(package_file).stem != 'unpacked':
+        output_dir_str = Path(package_file).stem
     
-    # Check if output directory exists and has files
-    out_path = Path(out_dir)
+    logger.debug(f"Unpacking {package_file} to {output_dir_str}")
+    out_path = Path(output_dir_str)
+
+    if out_path.is_file():
+        logger.error(f"Error: Output directory target '{out_path}' exists and is a file.")
+        return
+
+    # Existing check for non-empty directory with --overwrite is good:
     if out_path.exists() and any(out_path.iterdir()) and not overwrite:
-        click.echo(f"{SYMBOLS['error']} Directory {out_dir} is not empty. Use --overwrite to force.")
-        exit(1)
+        logger.error(f"Error: Directory '{out_path}' is not empty. Use --overwrite to force.")
+        # exit(1) # Changed to return for consistency
+        return
     
     packager = ORMDPackager()
-    if packager.unpack(package_file, out_dir):
-        click.echo(f"{SYMBOLS['success']} Unpacked to: {out_dir}")
+    if packager.unpack(package_file, output_dir_str): # Use potentially modified output_dir_str
+        logger.info(f"{SYMBOLS['success']} Unpacked to: {output_dir_str}")
         
         # Show what was extracted
         if out_path.exists():
             files = list(out_path.iterdir())
-            click.echo("Files extracted:")
+            logger.info("Files extracted:")
             for file in sorted(files):
-                click.echo(f"  {SYMBOLS['bullet']} {file.name}")
+                logger.info(f"  {SYMBOLS['bullet']} {file.name}")
     else:
-        click.echo(f"{SYMBOLS['error']} Failed to unpack {package_file}")
+        logger.error(f"{SYMBOLS['error']} Failed to unpack {package_file}")
         exit(1)
 
+@click.pass_context # New decorator
 @cli.command()
 @click.argument('file_path')
 @click.option('--dry-run', '-n', is_flag=True, help='Show what would be updated without making changes')
 @click.option('--force-update', '-f', is_flag=True, help='Update locked fields (ignore locked: true)')
-@click.option('--verbose', '-v', is_flag=True, help='Show detailed update information')
-def update(file_path, dry_run, force_update, verbose):
-    """Update and sync front-matter fields (date_modified, word_count, link_ids, asset_ids)"""
+# verbose option is now global
+# @click.option('--verbose', '-v', is_flag=True, help='Show detailed update information')
+def update(ctx, file_path, dry_run, force_update, verbose): # Added ctx, verbose might be from global
+    # If local verbose is removed, use: verbose = ctx.obj.get('VERBOSE', False)
+    """Update and sync front-matter fields (date_modified, word_count, etc.).
+
+    The -v/--verbose flag (global or command-specific) shows detailed update information.
+
+    Examples:
+    
+      ormd update my_document.ormd
+      ormd -v update my_document.ormd
+      ormd update my_document.ormd --dry-run
+      ormd update my_document.ormd --force-update
+    """
+    logger.debug(f"Updating file: {file_path}")
     updater = ORMDUpdater()
     
     try:
@@ -168,36 +264,59 @@ def update(file_path, dry_run, force_update, verbose):
             verbose=verbose
         )
         
+    # Determine if local verbose was explicitly set for update, otherwise use global
+    # This assumes the local verbose flag is meant to override the global for this command.
+    # If not, then `verbose_flag = ctx.obj.get('VERBOSE', False)` would be sufficient.
+    verbose_flag = verbose if ctx.get_parameter_source('verbose') == click.core.ParameterSource.COMMAND_LINE else ctx.obj.get('VERBOSE', False)
+
+    try:
+        result = updater.update_file(
+            file_path,
+            dry_run=dry_run,
+            force_update=force_update,
+            verbose=verbose_flag # Pass the determined verbosity
+        )
+
         if dry_run:
             if result['changes']:
-                click.echo(f"{SYMBOLS['info']} Would update {file_path}:")
+                logger.debug("Dry run: Showing potential changes.")
+                logger.info(f"{SYMBOLS['info']} Would update {file_path}:")
                 for field, change in result['changes'].items():
-                    old_val = change.get('old', 'None')
+                    old_val = change.get('old', 'None') # Ensure old_val is defined if using it here
                     new_val = change.get('new')
-                    click.echo(f"  {SYMBOLS['bullet']} {field}: {old_val} → {new_val}")
+                    logger.info(f"  {SYMBOLS['bullet']} {field}: {old_val} → {new_val}")
             else:
-                click.echo(f"{SYMBOLS['success']} {file_path} is already up to date")
+                logger.info(f"{SYMBOLS['success']} {file_path} is already up to date (dry run)")
         else:
             if result['updated']:
-                click.echo(f"{SYMBOLS['success']} Updated {file_path}")
-                if verbose and result['changes']:
-                    click.echo("Changes made:")
+                logger.info(f"{SYMBOLS['success']} Updated {file_path}")
+                if verbose_flag and result['changes']: # Use determined verbosity
+                    logger.debug("Changes made:") # Detailed changes to debug
                     for field, change in result['changes'].items():
                         old_val = change.get('old', 'None')
                         new_val = change.get('new')
-                        click.echo(f"  {SYMBOLS['bullet']} {field}: {old_val} → {new_val}")
+                        logger.debug(f"  {SYMBOLS['bullet']} {field}: {old_val} → {new_val}")
             else:
-                click.echo(f"{SYMBOLS['success']} {file_path} is already up to date")
+                logger.info(f"{SYMBOLS['success']} {file_path} is already up to date")
                 
     except Exception as e:
-        click.echo(f"{SYMBOLS['error']} Failed to update {file_path}: {str(e)}")
+        logger.error(f"{SYMBOLS['error']} Failed to update {file_path}: {str(e)}")
         exit(1)
 
+@click.pass_context # New decorator
 @cli.command()
 @click.argument('input_file')
 @click.option('--out', '-o', default=None, help='Output HTML file')
-def render(input_file, out):
-    """Render an ORMD file or package to HTML with sidebar features."""
+@click.option('--overwrite', is_flag=True, help='Overwrite the output file if it already exists.') # New
+def render(ctx, input_file, out, overwrite: bool): # Added overwrite
+    """Render an ORMD file or package to HTML.
+
+    Examples:
+    
+      ormd render my_document.ormd
+      ormd render my_package.ormd -o custom_name.html
+    """
+    logger.debug(f"Rendering {input_file} to {out if out else 'default HTML output'}")
     input_path = Path(input_file)
     is_zip = input_path.suffix == '.ormd' and zipfile.is_zipfile(input_file)
     raw_ormd = ''
@@ -211,16 +330,19 @@ def render(input_file, out):
     metadata = None
 
     if is_zip:
+        logger.debug(f"Input is a zip package. Reading content.ormd and meta.json.")
         with zipfile.ZipFile(input_file, 'r') as zf:
             if 'content.ormd' in zf.namelist():
                 raw_ormd = zf.read('content.ormd').decode('utf-8')
             if 'meta.json' in zf.namelist():
                 meta = json.loads(zf.read('meta.json').decode('utf-8'))
     else:
+        logger.debug(f"Input is a plain ORMD file. Reading directly.")
         raw_ormd = Path(input_file).read_text(encoding='utf-8')
 
     # Unified parsing for both file and package using the shared parser
     front_matter, body, metadata, parse_errors = parse_document(raw_ormd)
+    logger.debug("Document parsed. Generating HTML content.")
     title = front_matter.get('title', title) if front_matter else title
     links = front_matter.get('links', []) if front_matter else []
 
@@ -231,22 +353,37 @@ def render(input_file, out):
     html_content = generate_render_html(raw_ormd, front_matter, body, links, meta)
 
     # Determine output path
-    if out is None:
-        out = str(input_path.with_suffix('.html'))
-    Path(out).write_text(html, encoding='utf-8')
-    click.echo(f"✅ Rendered HTML written to: {out}")
+    output_path_str = out
+    if output_path_str is None:
+        output_path_str = str(input_path.with_suffix('.html'))
 
+    out_path = Path(output_path_str)
+    if out_path.exists() and not overwrite:
+        logger.error(f"Error: Output file '{out_path}' already exists. Use --overwrite to replace it.")
+        return
+
+    out_path.write_text(html_content, encoding='utf-8')
+    logger.info(f"{SYMBOLS['success']} Rendered HTML written to: {out_path}") # Use out_path here
+
+@click.pass_context # New decorator
 @cli.command()
 @click.argument('file_path')
 @click.option('--port', '-p', default=0, help='Local server port (0 for random)')
 @click.option('--no-browser', is_flag=True, help='Don\'t automatically open browser')
 @click.option('--show-url', is_flag=True, help='Just show URL that would be opened (for testing)')
-def open(file_path, port, no_browser, show_url):
-    """Open ORMD document in browser for viewing"""
-    
+def open(ctx, file_path, port, no_browser, show_url): # Added ctx
+    """Open ORMD document in browser for viewing (read-only).
+
+    Examples:
+    
+      ormd open my_document.ormd
+      ormd open my_package.ormd -p 8080
+      ormd open my_document.ormd --no-browser
+    """
+    logger.debug(f"Preparing to open {file_path} for viewing.")
     # Validate file exists
     if not Path(file_path).exists():
-        click.echo(f"{SYMBOLS['error']} File not found: {file_path}")
+        logger.error(f"{SYMBOLS['error']} File not found: {file_path}")
         exit(1)
     
     try:
@@ -267,11 +404,12 @@ def open(file_path, port, no_browser, show_url):
 
         # Parse document
         front_matter, body, metadata, parse_errors = parse_document(raw_ormd)
+        logger.debug("Document parsed for viewing mode.")
         
         if parse_errors:
-            click.echo(f"{SYMBOLS['warning']} Document has parsing errors:")
+            logger.warning(f"{SYMBOLS['warning']} Document has parsing errors:")
             for error in parse_errors:
-                click.echo(f"  {SYMBOLS['bullet']} {error}")
+                logger.warning(f"  {SYMBOLS['bullet']} {error}")
         
         title = front_matter.get('title', 'ORMD Document') if front_matter else 'ORMD Document'
         links = front_matter.get('links', []) if front_matter else []
@@ -284,29 +422,37 @@ def open(file_path, port, no_browser, show_url):
             # Just show what would happen without starting server
             if port == 0:
                 port = 8000  # Default for display
-            click.echo(f"{SYMBOLS['success']} Would open '{title}' at http://localhost:{port}/")
-            click.echo(f"{SYMBOLS['info']} HTML generated successfully ({len(html_content)} characters)")
+            logger.info(f"{SYMBOLS['success']} Would open '{title}' at http://localhost:{port}/")
+            logger.debug(f"{SYMBOLS['info']} HTML generated successfully ({len(html_content)} characters)")
             return
         
         # Start server and open browser
         _serve_and_open(html_content, port, no_browser, file_path, title)
         
     except Exception as e:
-        click.echo(f"{SYMBOLS['error']} Failed to open {file_path}: {str(e)}")
+        logger.error(f"{SYMBOLS['error']} Failed to open {file_path}: {str(e)}")
         exit(1)
 
+@click.pass_context # New decorator
 @cli.command()
 @click.argument('file_path')
 @click.option('--port', '-p', default=0, help='Local server port (0 for random)')
 @click.option('--no-browser', is_flag=True, help='Don\'t automatically open browser')
 @click.option('--force', '-f', is_flag=True, help='Force edit even if permissions deny it')
 @click.option('--show-url', is_flag=True, help='Just show URL that would be opened (for testing)')
-def edit(file_path, port, no_browser, force, show_url):
-    """Open ORMD document in browser for editing"""
-    
+def edit(ctx, file_path, port, no_browser, force, show_url): # Added ctx
+    """Open ORMD document in browser for editing.
+
+    Examples:
+    
+      ormd edit my_document.ormd
+      ormd edit my_package.ormd -p 8081 --force
+      ormd edit my_document.ormd --no-browser
+    """
+    logger.debug(f"Preparing to open {file_path} for editing.")
     # Validate file exists
     if not Path(file_path).exists():
-        click.echo(f"{SYMBOLS['error']} File not found: {file_path}")
+        logger.error(f"{SYMBOLS['error']} File not found: {file_path}")
         exit(1)
     
     try:
@@ -327,11 +473,12 @@ def edit(file_path, port, no_browser, force, show_url):
 
         # Parse document
         front_matter, body, metadata, parse_errors = parse_document(raw_ormd)
+        logger.debug("Document parsed for editing mode.")
         
         if parse_errors:
-            click.echo(f"{SYMBOLS['warning']} Document has parsing errors:")
+            logger.warning(f"{SYMBOLS['warning']} Document has parsing errors:")
             for error in parse_errors:
-                click.echo(f"  {SYMBOLS['bullet']} {error}")
+                logger.warning(f"  {SYMBOLS['bullet']} {error}")
         
         title = front_matter.get('title', 'ORMD Document') if front_matter else 'ORMD Document'
         links = front_matter.get('links', []) if front_matter else []
@@ -341,27 +488,29 @@ def edit(file_path, port, no_browser, force, show_url):
         can_edit = permissions.get('editable', True)  # Default to editable
         is_signed = permissions.get('signed', False)
         perm_mode = permissions.get('mode', 'draft')
+        logger.debug(f"Checking permissions: editable={can_edit}, signed={is_signed}, mode={perm_mode}")
         
         if is_signed and not force:
-            click.echo(f"{SYMBOLS['error']} Document is cryptographically signed and cannot be edited")
-            click.echo("Use --force to edit anyway (will break signature)")
+            logger.error(f"{SYMBOLS['error']} Document is cryptographically signed and cannot be edited")
+            logger.info("Use --force to edit anyway (will break signature)")
             exit(1)
         
         if not can_edit and not force:
-            click.echo(f"{SYMBOLS['error']} Document permissions deny editing (editable: false)")
-            click.echo("Use --force to edit anyway")
+            logger.error(f"{SYMBOLS['error']} Document permissions deny editing (editable: false)")
+            logger.info("Use --force to edit anyway")
             exit(1)
         
         if perm_mode == 'private' and not force:
-            click.echo(f"{SYMBOLS['warning']} Document is marked as private")
-            click.echo("Continuing with edit (use --force to suppress this warning)")
+            logger.warning(f"{SYMBOLS['warning']} Document is marked as private")
+            logger.info("Continuing with edit (use --force to suppress this warning)")
         
         # Show warnings for forced edits
         if force:
+            logger.warning("Forced edit mode activated.")
             if is_signed:
-                click.echo(f"{SYMBOLS['warning']} Editing signed document - signature will be invalidated")
+                logger.warning(f"{SYMBOLS['warning']} Editing signed document - signature will be invalidated")
             if not can_edit:
-                click.echo(f"{SYMBOLS['warning']} Editing document marked as non-editable")
+                logger.warning(f"{SYMBOLS['warning']} Editing document marked as non-editable")
         
         # Generate HTML for editing
         html_content = _generate_editable_html(file_path, raw_ormd, front_matter, body, links, meta)
@@ -370,83 +519,19 @@ def edit(file_path, port, no_browser, force, show_url):
             # Just show what would happen without starting server
             if port == 0:
                 port = 8000  # Default for display
-            click.echo(f"{SYMBOLS['success']} Would edit '{title}' at http://localhost:{port}/")
-            click.echo(f"{SYMBOLS['info']} Editable HTML generated successfully ({len(html_content)} characters)")
+            logger.info(f"{SYMBOLS['success']} Would edit '{title}' at http://localhost:{port}/")
+            logger.debug(f"{SYMBOLS['info']} Editable HTML generated successfully ({len(html_content)} characters)")
             return
         
         # Start server and open browser
         _serve_and_open(html_content, port, no_browser, file_path, f"{title} [EDIT]")
         
     except Exception as e:
-        click.echo(f"{SYMBOLS['error']} Failed to edit {file_path}: {str(e)}")
+        logger.error(f"{SYMBOLS['error']} Failed to edit {file_path}: {str(e)}")
         exit(1)
 
 # _generate_viewable_html, _generate_editable_html, and the old get_edit_template (if it was here) are removed.
 # _serve_and_open was already moved to server.py.
-
-from .converter import convert_cmd
-cli.add_command(convert_cmd)
-
-if __name__ == '__main__':
-    cli()
-    
-    # Create temporary HTML file
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
-        f.write(html_content)
-        temp_html_path = f.name
-    
-    # Find available port if not specified
-    if port == 0:
-        sock = socket.socket()
-        sock.bind(('', 0))
-        port = sock.getsockname()[1]
-        sock.close()
-    
-    # Custom HTTP handler to serve our temporary file
-    class ORMDHandler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=Path(temp_html_path).parent, **kwargs)
-        
-        def log_message(self, format, *args):
-            # Suppress HTTP logs for cleaner output
-            return
-    
-    try:
-        # Use a simpler approach with better interrupt handling
-        httpd = http.server.HTTPServer(("", port), ORMDHandler)
-        httpd.timeout = 0.5  # Short timeout for responsiveness
-        
-        url = f"http://localhost:{port}/{Path(temp_html_path).name}"
-        
-        click.echo(f"{SYMBOLS['success']} Opening '{title}' in browser")
-        click.echo(f"{SYMBOLS['info']} Server running at {url}")
-        click.echo(f"{SYMBOLS['info']} Press Ctrl+C to stop")
-        
-        if not no_browser:
-            # Open browser after short delay to ensure server is ready
-            threading.Timer(1.0, lambda: webbrowser.open(url)).start()
-        
-        # Simple serving loop that's easier to interrupt
-        try:
-            while True:
-                httpd.handle_request()
-        except KeyboardInterrupt:
-            click.echo(f"\n{SYMBOLS['info']} Stopping server...")
-        finally:
-            httpd.server_close()
-            
-    except OSError as e:
-        if "Address already in use" in str(e):
-            click.echo(f"{SYMBOLS['error']} Port {port} is already in use. Try a different port with --port")
-        else:
-            click.echo(f"{SYMBOLS['error']} Failed to start server: {str(e)}")
-        exit(1)
-    finally:
-        # Cleanup temporary file
-        try:
-            os.unlink(temp_html_path)
-        except:
-            pass
 
 from .converter import convert_cmd
 cli.add_command(convert_cmd)

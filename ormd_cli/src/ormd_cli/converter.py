@@ -14,6 +14,7 @@ import yaml # Though not directly used in convert, it's a common format, good to
 
 from .utils import SYMBOLS
 from .parser import parse_document, serialize_front_matter, _parse_front_matter_and_body
+from .logger import logger # Added
 
 # Helper function to parse PDF date strings
 def _parse_pdf_date_string(pdf_date_str: str) -> Optional[str]:
@@ -76,13 +77,20 @@ def _parse_pdf_date_string(pdf_date_str: str) -> Optional[str]:
 
     return dt.isoformat().replace("+00:00", "Z")
 
-
-@click.command(name="convert")
+@click.pass_context # New decorator
+@click.command(name="convert") # Existing decorator
 @click.argument('input_file_path', type=click.Path(exists=True, dir_okay=False, resolve_path=True))
 @click.argument('output_ormd_path', type=click.Path(dir_okay=False, resolve_path=True))
 @click.option('--input-format', '-f', type=click.Choice(['txt', 'md', 'pdf'], case_sensitive=False), help='Specify the input file format.')
-def convert_cmd(input_file_path: str, output_ormd_path: str, input_format: Optional[str]):
-    """Convert a file (e.g. TXT, MD, PDF) to an ORMD file."""
+def convert_cmd(ctx, input_file_path: str, output_ormd_path: str, input_format: Optional[str]): # Added ctx
+    """Convert a file (e.g. TXT, MD, PDF) to an ORMD file.
+
+    Examples:
+    
+      ormd convert my_notes.txt my_notes.ormd
+      ormd convert report.md report.ormd -f md
+      ormd convert document.pdf document.ormd
+    """
     try:
         input_p = Path(input_file_path)
         output_p = Path(output_ormd_path)
@@ -92,13 +100,15 @@ def convert_cmd(input_file_path: str, output_ormd_path: str, input_format: Optio
         if not effective_input_format:
             effective_input_format = input_p.suffix.lower().lstrip('.')
 
-        click.echo(f"{SYMBOLS['info']} Starting conversion...")
-        click.echo(f"  Input file: {input_file_path}")
-        click.echo(f"  Output ORMD file: {output_ormd_path}")
-        click.echo(f"  Detected input format: {effective_input_format if effective_input_format else 'unknown (will attempt .txt)'}")
+        logger.debug(f"Starting conversion of {input_file_path} to {output_ormd_path} with format {effective_input_format if effective_input_format else 'auto'}")
+
+        logger.info(f"{SYMBOLS['info']} Starting conversion...") # This is good for general info
+        logger.debug(f"  Input file: {input_file_path}") # Debug for more detail
+        logger.debug(f"  Output ORMD file: {output_ormd_path}") # Debug for more detail
+        logger.info(f"  Detected input format: {effective_input_format if effective_input_format else 'unknown (will attempt .txt)'}") # Info is fine
 
         if effective_input_format == 'txt':
-            click.echo(f"  Converting from TXT to ORMD...")
+            logger.info(f"Converting from {effective_input_format.upper()} to ORMD...")
 
             # Read TXT content
             with click.open_file(input_p, 'r', encoding='utf-8') as f:
@@ -128,10 +138,10 @@ def convert_cmd(input_file_path: str, output_ormd_path: str, input_format: Optio
             with click.open_file(output_p, 'w', encoding='utf-8') as f:
                 f.write(ormd_content)
 
-            click.echo(f"{SYMBOLS['success']} Successfully converted '{input_p.name}' to '{output_p.name}'")
+            logger.info(f"{SYMBOLS['success']} Successfully converted '{input_p.name}' to '{output_p.name}'")
 
         elif effective_input_format == 'md':
-            click.echo(f"  Converting from MD to ORMD...")
+            logger.info(f"Converting from {effective_input_format.upper()} to ORMD...")
 
             with click.open_file(input_p, 'r', encoding='utf-8') as f:
                 md_content_full = f.read()
@@ -143,8 +153,8 @@ def convert_cmd(input_file_path: str, output_ormd_path: str, input_format: Optio
                 # File is likely already an ORMD file, parse it fully
                 parsed_fm, parsed_body, _, parse_errors = parse_document(md_content_full)
                 if parse_errors: # Still try to proceed if only minor errors
-                    click.echo(f"{SYMBOLS['warning']} Input ORMD-like file has parsing issues:")
-                    for error in parse_errors: click.echo(f"    {SYMBOLS['bullet']} {error}")
+                    logger.warning(f"{SYMBOLS['warning']} Input ORMD-like file has parsing issues:")
+                    for error in parse_errors: logger.warning(f"    {SYMBOLS['bullet']} {error}")
                 if parsed_fm is not None: # if major parsing error, parsed_fm might be None
                     existing_fm = parsed_fm
                 body_content = parsed_body # Use body from full parse
@@ -193,7 +203,7 @@ def convert_cmd(input_file_path: str, output_ormd_path: str, input_format: Optio
 
             # Ensure 'authors' is a list. If overridden by a non-list, reset.
             if not isinstance(new_fm.get("authors"), list):
-                click.echo(f"{SYMBOLS['warning']} Existing 'authors' field was not a list. Resetting to empty list.")
+                logger.warning(f"{SYMBOLS['warning']} Existing 'authors' field was not a list. Resetting to empty list.")
                 new_fm["authors"] = []
 
             # Ensure title is present, if existing_fm didn't have one, default_title is used.
@@ -210,10 +220,11 @@ def convert_cmd(input_file_path: str, output_ormd_path: str, input_format: Optio
             with click.open_file(output_p, 'w', encoding='utf-8') as f:
                 f.write(ormd_content)
 
-            click.echo(f"{SYMBOLS['success']} Successfully converted '{input_p.name}' to '{output_p.name}'")
+            logger.info(f"{SYMBOLS['success']} Successfully converted '{input_p.name}' to '{output_p.name}'")
 
         elif effective_input_format == 'pdf':
-            click.echo(f"  PDF conversion selected for '{input_p.name}'.")
+            logger.info(f"Converting from {effective_input_format.upper()} to ORMD...") # Standardized this message
+            logger.debug(f"  PDF conversion selected for '{input_p.name}'.") # More specific debug
 
             # --- Metadata Extraction ---
             pdf_meta = {}
@@ -233,12 +244,12 @@ def convert_cmd(input_file_path: str, output_ormd_path: str, input_format: Optio
                             else:
                                 value_str = str(v_obj)
                             pdf_meta[key_str] = value_str
-                        click.echo(f"    {SYMBOLS['info']} Extracted PDF metadata keys: {list(pdf_meta.keys())}")
+                        logger.debug(f"Extracted PDF metadata keys: {list(pdf_meta.keys())}") # Simpler debug
             except PDFSyntaxError as e:
-                 click.echo(f"{SYMBOLS['error']} Failed to parse PDF for metadata (PDFSyntaxError): {e}. Ensure it's a valid PDF.")
+                 logger.error(f"{SYMBOLS['error']} Failed to parse PDF for metadata (PDFSyntaxError): {e}. Ensure it's a valid PDF.")
                  exit(1)
             except Exception as e:
-                click.echo(f"{SYMBOLS['warning']} Could not extract metadata from PDF (general error): {e}")
+                logger.warning(f"{SYMBOLS['warning']} Could not extract metadata from PDF (general error): {e}")
 
             # --- Text Extraction (Layout Analysis) ---
             extracted_text_blocks = []
@@ -250,12 +261,12 @@ def convert_cmd(input_file_path: str, output_ormd_path: str, input_format: Optio
                         if isinstance(element, LTTextBoxHorizontal):
                             extracted_text_blocks.append(element.get_text())
                 pdf_body_content = "\n\n".join(extracted_text_blocks).strip()
-                click.echo(f"    {SYMBOLS['success']} Successfully processed PDF text using layout analysis.")
+                logger.debug("Successfully processed PDF text using layout analysis.") # Debug for verbosity
             except PDFSyntaxError as e:
-                click.echo(f"{SYMBOLS['error']} Failed to process PDF for text extraction (PDFSyntaxError): {e}. Ensure it's a valid PDF.")
+                logger.error(f"{SYMBOLS['error']} Failed to process PDF for text extraction (PDFSyntaxError): {e}. Ensure it's a valid PDF.")
                 exit(1)
             except Exception as e:
-                click.echo(f"{SYMBOLS['error']} Failed to process PDF file '{input_p.name}' for text extraction: {e}")
+                logger.error(f"{SYMBOLS['error']} Failed to process PDF file '{input_p.name}' for text extraction: {e}")
                 exit(1)
 
             # --- Front-matter Population ---
@@ -307,13 +318,13 @@ def convert_cmd(input_file_path: str, output_ormd_path: str, input_format: Optio
             with click.open_file(output_p, 'w', encoding='utf-8') as f:
                 f.write(ormd_content)
 
-            click.echo(f"{SYMBOLS['success']} Successfully converted PDF '{input_p.name}' to ORMD file '{output_p.name}'")
+            logger.info(f"{SYMBOLS['success']} Successfully converted PDF '{input_p.name}' to ORMD file '{output_p.name}'")
 
         else:
-            click.echo(f"{SYMBOLS['error']} Unsupported input format: '{effective_input_format}'. Only 'txt', 'md', and 'pdf' are supported.")
-            click.echo(f"Please specify format with --input-format (e.g., txt, md, pdf).")
+            logger.error(f"{SYMBOLS['error']} Unsupported input format: '{effective_input_format}'. Only 'txt', 'md', and 'pdf' are supported.")
+            logger.info(f"Please specify format with --input-format (e.g., txt, md, pdf).")
             exit(1)
 
     except Exception as e:
-        click.echo(f"{SYMBOLS['error']} Failed during conversion: {str(e)}")
+        logger.error(f"{SYMBOLS['error']} Failed during conversion: {str(e)}")
         exit(1)
