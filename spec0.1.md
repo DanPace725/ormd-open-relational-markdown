@@ -26,62 +26,27 @@ Every `.ormd` file **MUST** begin with an HTML comment version marker:
 
 ## 3. Base Syntax
 
-1. **CommonMark 0.30** compliance for all Markdown constructs.
-2. **YAML front-matter** uses `+++` delimiters on lines by themselves to open and close the block.
-   *   The original `---` delimiters are also supported for backward compatibility.
-   *   The parser implementation has been updated to a more robust state machine, which correctly distinguishes these delimiters from thematic breaks (`---`) or other `+++` sequences within the document body.
+1.  **CommonMark 0.30** compliance for all Markdown constructs.
+2.  ORMD documents use a single YAML front-matter block for all metadata. This block **MUST** be at the beginning of the document, immediately following the version tag.
+    *   The front-matter block **MUST** be delimited by `---` on lines by themselves.
+    *   While `+++` delimiters for this initial block may still be parsed by some tools for backward compatibility with older ORMD 0.1 drafts, `---` is the standard and preferred delimiter. Future versions of ORMD may deprecate `+++` for front-matter entirely.
+    *   The parser implementation correctly distinguishes these delimiters from thematic breaks (`---`) or other `+++` sequences within the document body.
 
 ```ormd
 <!-- ormd:0.1 -->
-+++
+---
 title: Example
 authors:
   - id: alice
     display: Alice L.
 links: []
-+++
+---
 # Heading
 
 Body text…
 ```
 
-### 3.3 Metadata Blocks
-
-Beyond front-matter, ORMD allows for arbitrary metadata blocks to be embedded within the document body. These blocks are delimited as follows:
-
-*   **Opening Delimiter:** `+++meta <optional_id>` on a line by itself.
-    *   `<optional_id>` is an alphanumeric string used to identify the metadata block.
-    *   If `<optional_id>` is omitted, the block is assigned a default identifier (e.g., "default" or an auto-generated sequence).
-*   **Closing Delimiter:** `+++end-meta` on a line by itself.
-*   **Content:** The content between these delimiters is treated as a raw string. It can be any format (e.g., YAML, JSON, plain text). The interpretation of this content is up to the tooling or application processing the ORMD document.
-
-```ormd
-<!-- ormd:0.1 -->
-+++
-title: Document with Metadata Blocks
-links: []
-+++
-# Content Section 1
-
-Some text.
-
-+++meta custom_data
-info: Additional custom data
-format: yaml
-values:
-  - item1
-  - item2
-+++end-meta
-
-# Content Section 2
-
-More text.
-
-+++meta notes
-This is a plain text metadata block, perhaps for editor notes or annotations.
-+++end-meta
-```
-The state machine parser correctly identifies these blocks and separates their content from the main document body.
+**Note on Metadata:** Separate metadata blocks (e.g., using `+++meta ... +++end-meta` syntax) within the document body are no longer supported. All document metadata (including authorship, links, dates, custom fields, etc.) **MUST** be defined within the single YAML front-matter block at the top of the file.
 
 ## 4. Relational Layer
 
@@ -163,7 +128,7 @@ Failure to meet any rule **MUST** result in a non-zero exit code.
 
 ```ormd
 <!-- ormd:0.1 -->
-+++
+---
 title: Hello ORMD
 authors:
   - id: daniel.pace
@@ -172,7 +137,7 @@ links:
   - id: g1
     rel: supports
     to: "#goal"
-+++
+---
 # Hello ORMD
 
 This is a **living document** that combines Markdown and semantic links.

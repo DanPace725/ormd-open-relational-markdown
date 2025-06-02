@@ -1,0 +1,22 @@
+<!-- ormd:0.1 -->
+---
+title: Test Document for ORMD Package
+authors:
+  - id: packager.test
+    display: Packager Test User
+links:
+  - id: section-a
+    rel: supports
+    to: "#section-a-header"
+---
+
+# Main Content of Packaged Document
+
+This is the primary content of a document that is intended to be packaged within a .ormd file.
+
+It adheres to the ORMD 0.1 specification, with all metadata in the YAML front-matter.
+
+## Section A {#section-a-header}
+
+This section is referenced by [[section-a]].
+No `+++meta` blocks or secondary YAML blocks should exist in this body.

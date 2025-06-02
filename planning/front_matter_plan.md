@@ -1,19 +1,8 @@
 Progressive Path to Universal Editing
 Phase 1: Simplify the Single-File Format (Immediate)
-The current +++meta / +++end-meta syntax is weird and breaks the "looks like normal markdown" principle. Let's fix this:
-Instead of:
-ormd<!-- ormd:0.1 -->
----
-title: Document
-links: [...]
----
+The previous `+++meta` / `+++end-meta` syntax for separate metadata blocks in the document body is no longer supported. All metadata must be consolidated into the single YAML front-matter block at the beginning of the document. This approach aligns with the "looks like normal markdown" principle.
 
-# Content here
-
-+++meta
-created: 2025-05-29
-+++end-meta
-Do this:
+The standard way to define front-matter is:
 ormd<!-- ormd:0.1 -->
 ---
 title: Document

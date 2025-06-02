@@ -170,7 +170,25 @@ Created a comprehensive schema definition in `src/ormd_cli/schema.py`:
 - **Type Safety**: Comprehensive validation prevents invalid documents
 - **Tool Friendly**: Works with existing markdown editors
 
-The schema successfully replaces the `+++meta` blocks with organized front-matter metadata, following the design philosophy that "ALL metadata should be in the front-matter YAML block" for maximum compatibility and editability.
+The schema consolidates all metadata into the main YAML front-matter block, making separate `+++meta` blocks obsolete and unsupported. This aligns with the design philosophy that "ALL metadata should be in the front-matter YAML block" for maximum compatibility and editability.
+
+For example, information previously considered for `+++meta` blocks is now structured within the main front-matter:
+
+**Schema-based Front-matter (All Metadata Included):**
+```yaml
+---
+title: Document
+authors: [...]
+links: [...]
+dates:
+  created: "2025-05-29T10:00:00Z"
+metrics:
+  word_count: 247
+# ... other metadata ...
+---
+
+# Content
+```
 
 graph TD
     A["ORMD Front-Matter Schema"] --> B["Required Fields"]

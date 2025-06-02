@@ -231,8 +231,8 @@ This front-matter is never closed.
         assert front_matter is None
         assert "title:" in body
 
-    def test_legacy_meta_block_warning(self):
-        """Test that legacy +++meta blocks generate deprecation warnings."""
+    def test_legacy_meta_block_error(self):
+        """Test that legacy +++meta blocks now generate errors."""
         content = '''<!-- ormd:0.1 -->
 ---
 title: "Legacy Document"
@@ -245,7 +245,7 @@ links: []
 Some content here.
 
 +++meta
-legacy_field: "This should generate a warning"
+legacy_field: "This should generate an error"
 +++end-meta
 
 More content.
@@ -253,8 +253,49 @@ More content.
         
         front_matter, body, metadata, errors = parse_document(content)
         
+        assert front_matter is not None # Parser might still return front_matter
+        assert any("`+++meta` blocks are no longer supported" in error for error in errors)
+
+    def test_multiple_yaml_blocks_error(self):
+        """Test that multiple YAML blocks generate an error."""
+        content = '''<!-- ormd:0.1 -->
+---
+title: "Initial Valid Front Matter"
+authors: ["Test Author"]
+links: []
+---
+
+# Body Content
+
+This is the main body.
+
+---
+another_title: "This is a second YAML block"
+problem: true
+---
+
+More body content.
+'''
+        front_matter, body, metadata, errors = parse_document(content)
+        assert front_matter is not None # The first FM should parse
+        assert any("Multiple YAML front-matter blocks found" in error for error in errors)
+        assert "another_title" in body # The second block is part of the body now
+
+    def test_parse_invalid_legacy_meta_fixture(self):
+        """Test parsing fixture with legacy +++meta block."""
+        fixture_path = Path(__file__).parent / "fixtures" / "invalid_legacy_meta.ormd"
+        content = fixture_path.read_text(encoding='utf-8')
+        front_matter, body, metadata, errors = parse_document(content)
         assert front_matter is not None
-        assert any("+++meta blocks are deprecated" in error for error in errors)
+        assert any("`+++meta` blocks are no longer supported" in error for error in errors)
+
+    def test_parse_invalid_multiple_yaml_fixture(self):
+        """Test parsing fixture with multiple YAML blocks."""
+        fixture_path = Path(__file__).parent / "fixtures" / "invalid_multiple_yaml.ormd"
+        content = fixture_path.read_text(encoding='utf-8')
+        front_matter, body, metadata, errors = parse_document(content)
+        assert front_matter is not None
+        assert any("Multiple YAML front-matter blocks found" in error for error in errors)
 
     def test_serialize_front_matter_ordering(self):
         """Test that front-matter serialization maintains stable field ordering."""

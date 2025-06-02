@@ -1,5 +1,5 @@
 <!-- ormd:0.1 -->
-+++
+---
 title: Simple Test Document
 authors:
   - id: tester
@@ -8,7 +8,7 @@ links:
   - id: test-link
     rel: supports
     to: "#section"
-+++
+---
 
 # Simple Test Document
 

@@ -1,0 +1,19 @@
+{
+  "version": "0.1",
+  "created": "2023-01-01T00:00:00Z",
+  "modified": "2023-01-01T00:00:00Z",
+  "parser_version": "0.1.0",
+  "tool_version": "ormd-cli-0.2.0",
+  "provenance": {
+    "source_files": [
+      "test_content_compliant.ormd"
+    ],
+    "processing_steps": [
+      {
+        "tool": "ORMD Packager",
+        "timestamp": "2023-01-01T00:00:00Z",
+        "details": "Initial packaging."
+      }
+    ]
+  }
+}

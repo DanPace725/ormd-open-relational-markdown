@@ -40,7 +40,15 @@ class ORMDValidator:
                 
             # Phase 1: Asset existence checks
             if not self._validate_asset_existence(front_matter, file_path_obj.parent):
-                return False
+                # This check already appends to self.errors, so we just check its return
+                pass # Collect all errors before returning
+
+            # Add new checks for legacy meta blocks and multiple YAML blocks
+            if front_matter is not None: # Only perform these if initial parsing was somewhat successful
+                if not self._check_for_legacy_meta_blocks(body):
+                    pass # Collect all errors
+                if not self._check_for_multiple_yaml_blocks(body, front_matter is not None): # front_matter is not None implies it exists
+                    pass # Collect all errors
                 
             return len(self.errors) == 0
             
@@ -53,6 +61,23 @@ class ORMDValidator:
         if not content.strip().startswith('<!-- ormd:0.1 -->'):
             self.errors.append("Missing or invalid version tag. Add '<!-- ormd:0.1 -->' at the top of your document.")
             return False
+        return True
+
+    def _check_for_legacy_meta_blocks(self, body: str) -> bool:
+        """Checks for '+++meta' or '+++end-meta' blocks in the body."""
+        if re.search(r'^[ ]*\+\+\+(meta|end-meta)\b', body, re.MULTILINE):
+            self.errors.append("Error: `+++meta` or `+++end-meta` blocks are no longer supported. All metadata must be in the YAML front-matter.")
+            return False
+        return True
+
+    def _check_for_multiple_yaml_blocks(self, body: str, front_matter_exists: bool) -> bool:
+        """Checks for multiple YAML front-matter blocks if initial front-matter was found."""
+        if front_matter_exists:
+            # This regex looks for '---' or '+++' at the beginning of a line,
+            # possibly with leading spaces, followed by an optional newline.
+            if re.search(r'^\s*(?:---|\+\+\+)\s*$', body, re.MULTILINE):
+                self.errors.append("Error: Multiple YAML front-matter blocks found. Only one is allowed at the beginning of the document.")
+                return False
         return True
     
     def _validate_required_fields_with_guidance(self, front_matter: Dict[str, Any]) -> bool:

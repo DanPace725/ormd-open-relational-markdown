@@ -1,0 +1,25 @@
+<!-- ormd:0.1 -->
+---
+title: Invalid Multiple YAML Test
+authors:
+  - id: test.user
+    display: Test User
+links: []
+---
+
+# Document Body
+
+This document has a valid initial YAML front-matter block.
+
+---
+secondary_title: This is a problem
+another_field: true
+---
+
+The YAML block above (starting and ending with `---`) should cause a parsing or validation error because only one YAML front-matter block is allowed at the beginning of the document.
+
++++
+some_other_block: also problematic
++++
+
+And this `+++` block too.

@@ -60,6 +60,9 @@ ORMD isn't reinventing the wheel - it's combining the best parts of existing sol
 - **Git workflows** → Fork, merge, attribution patterns developers trust
 
 ### Core Innovation: Semantic Relationships
+
+ORMD documents use a single YAML front-matter block for all metadata, placed at the very beginning of the file after the `<!-- ormd:0.1 -->` version tag. This block is delimited by `---` on lines by themselves.
+
 ```markdown
 ---
 title: Research Paper

@@ -1,0 +1,19 @@
+<!-- ormd:0.1 -->
+---
+title: Invalid Legacy Meta Test
+authors:
+  - id: test.user
+    display: Test User
+links: []
+---
+
+# Document Body
+
+This document has a valid YAML front-matter.
+
++++meta
+legacy_field: Some legacy value
+another_legacy: true
++++end-meta
+
+The block above should cause a parsing or validation error because `+++meta` and `+++end-meta` are no longer supported.

@@ -37,11 +37,25 @@ def parse_document(content: str) -> Tuple[Optional[Dict], str, Optional[Dict[str
     if front_matter is None:
         front_matter = {}
     
-    # Note: metadata blocks (+++meta) are no longer supported
-    # All metadata should be in the front-matter YAML block
-    # Only warn if we find actual +++meta block patterns, not just the text "+++meta"
+    # Validate YAML if present, and ensure no multiple front-matter blocks
+    if front_matter is None:
+        if content_without_version.strip().startswith(('---', '+++')):
+            errors.append("Error: Invalid YAML in front-matter.")
+            # No further checks needed if the primary front-matter is invalid
+            return None, body, None, errors
+        # If no front-matter delimiters at all, it's a valid document with an empty front_matter
+        front_matter = {}
+    else: # Valid initial front-matter was found
+        # Check for subsequent YAML block delimiters in the body
+        # This regex looks for '---' or '+++' at the beginning of a line, possibly with spaces before it.
+        if re.search(r'^\s*(---\s*$|\+\+\+\s*$)', body, re.MULTILINE):
+            errors.append("Error: Multiple YAML front-matter blocks found. Only one is allowed at the beginning of the document.")
+
+    # Error for legacy +++meta blocks
     if re.search(r'^[ ]*\+\+\+meta\b', body, re.MULTILINE):
-        errors.append("Warning: +++meta blocks are deprecated. Please move all metadata to the front-matter YAML block.")
+        errors.append("Error: `+++meta` blocks are no longer supported. All metadata must be in the YAML front-matter.")
+    if re.search(r'^[ ]*\+\+\+end-meta\b', body, re.MULTILINE): # Check for +++end-meta as well
+        errors.append("Error: `+++end-meta` blocks are no longer supported.")
     
     return front_matter, body, None, errors
 
@@ -103,82 +117,7 @@ def _extract_yaml_block(content: str, delimiter: str) -> Tuple[Optional[Dict], s
     
     return front_matter, body_content
 
-
-def migrate_legacy_metadata(front_matter: Dict, legacy_metadata: Optional[Dict[str, str]]) -> Dict:
-    """Migrate legacy +++meta blocks to front-matter structure.
-    
-    This function helps migrate old documents that still have +++meta blocks
-    by moving their content into the appropriate front-matter fields.
-    """
-    if not legacy_metadata:
-        return front_matter
-    
-    migrated = front_matter.copy()
-    
-    # Process each metadata block
-    for meta_id, meta_content in legacy_metadata.items():
-        try:
-            # Try to parse as YAML first
-            parsed_meta = yaml.safe_load(meta_content)
-            if isinstance(parsed_meta, dict):
-                # Migrate known fields to appropriate namespaces
-                _migrate_metadata_fields(migrated, parsed_meta)
-            else:
-                # Store as simple key-value if not a dict
-                migrated[f'legacy_{meta_id}'] = meta_content
-        except yaml.YAMLError:
-            # Store as plain text if YAML parsing fails
-            migrated[f'legacy_{meta_id}'] = meta_content
-    
-    return migrated
-
-
-def _migrate_metadata_fields(front_matter: Dict, metadata: Dict) -> None:
-    """Migrate specific metadata fields to appropriate front-matter namespaces."""
-    
-    # Migrate date fields to dates namespace
-    date_fields = ['created', 'modified', 'date_created', 'date_modified']
-    dates = front_matter.setdefault('dates', {})
-    for field in date_fields:
-        if field in metadata:
-            if field.startswith('date_'):
-                # Convert date_created -> created
-                new_field = field[5:]
-            else:
-                new_field = field
-            dates[new_field] = metadata[field]
-    
-    # Migrate metrics fields to metrics namespace  
-    metrics_fields = ['word_count', 'wordCount', 'reading_time', 'readingTime']
-    metrics = front_matter.setdefault('metrics', {})
-    for field in metrics_fields:
-        if field in metadata:
-            if field in ['wordCount', 'readingTime']:
-                # Convert camelCase to snake_case
-                new_field = 'word_count' if field == 'wordCount' else 'reading_time'
-            else:
-                new_field = field
-            metrics[new_field] = metadata[field]
-    
-    # Migrate permissions fields to permissions namespace
-    permission_fields = ['mode', 'editable', 'signed']
-    permissions = front_matter.setdefault('permissions', {})
-    for field in permission_fields:
-        if field in metadata:
-            permissions[field] = metadata[field]
-    
-    # Migrate simple fields directly
-    simple_fields = ['version', 'status', 'description', 'language', 'license']
-    for field in simple_fields:
-        if field in metadata:
-            front_matter[field] = metadata[field]
-    
-    # Migrate keywords/tags
-    if 'keywords' in metadata:
-        front_matter['keywords'] = metadata['keywords']
-    elif 'tags' in metadata:
-        front_matter['keywords'] = metadata['tags']
-
+# Removed migrate_legacy_metadata and _migrate_metadata_fields functions
 
 def serialize_front_matter(front_matter: Dict) -> str:
     """Serialize front-matter dictionary to YAML with stable ordering.

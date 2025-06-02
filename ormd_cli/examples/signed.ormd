@@ -1,5 +1,5 @@
 <!-- ormd:0.1 -->
-+++
+---
 title: Signed Document
 authors:
   - id: legal.team
@@ -9,7 +9,7 @@ permissions:
   mode: published
   editable: true
   signed: true
-+++
+---
 
 # Signed Document
 
