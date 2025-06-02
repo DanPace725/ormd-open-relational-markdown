@@ -1,0 +1,242 @@
+<!-- ormd:0.1 -->
+---
+title: JavaScript Edit Functionality Fixes
+authors:
+  - id: claude-sonnet
+    display: Claude Sonnet 4
+    affiliation: Anthropic
+dates:
+  created: '2025-01-22T12:00:00.000000+00:00'
+  modified: '2025-01-22T12:00:00.000000+00:00'
+permissions:
+  mode: published
+  editable: true
+  signed: false
+links:
+  - id: edit-template
+    rel: implements
+    to: ormd_cli/src/ormd_cli/templates/edit_template.html
+    description: The main template file that was fixed
+  - id: main-cli
+    rel: related
+    to: ormd_cli/src/ormd_cli/main.py
+    description: CLI main file that was also fixed during this session
+---
+
+# JavaScript Edit Functionality Fixes
+
+## Summary
+
+This document details the comprehensive fixes applied to resolve JavaScript errors in the ORMD CLI edit functionality. The edit interface had multiple critical issues preventing proper operation of the preview, split-view, and interactive editing features.
+
+## Issues Identified
+
+### 1. **Syntax Errors**
+- **Invalid Regular Expression**: `/\\[\\[([^\\]]+)\\]\\]/g` caused `SyntaxError: Unmatched ')'`
+- **Template Formatting**: Python `.format()` method conflicts with JavaScript curly braces
+- **Function Definition Order**: Functions called before being defined
+
+### 2. **Runtime Errors**
+- **Missing DOM Elements**: Code executed before DOM was ready
+- **Undefined Functions**: `showPreview`, `showFeedback`, and utility functions not accessible
+- **Library Loading**: External CDN libraries (marked.js, js-yaml, d3.js) loading issues
+
+### 3. **Parsing Errors**
+- **Newline Handling**: Incorrect string splitting using `\\n` instead of `\n`
+- **Front-matter Detection**: Failed to parse YAML front-matter blocks
+
+## Solutions Implemented
+
+### 1. **Enhanced Error Handling System**
+
+Added comprehensive error handling infrastructure:
+
+```javascript
+// Global error handler
+window.addEventListener('error', function(e) {
+  console.error('ORMD Edit Error:', e.error, 'at', e.filename, ':', e.lineno);
+  showFeedback('error', '❌ JavaScript Error: ' + e.message);
+  return false;
+});
+
+// Safe function wrapper
+function safeCall(funcName, func) {
+  try {
+    console.log('ORMD Edit: Calling', funcName);
+    return func();
+  } catch (error) {
+    console.error('ORMD Edit: Error in', funcName, ':', error);
+    showFeedback('error', '❌ Error in ' + funcName + ': ' + error.message);
+    return null;
+  }
+}
+```
+
+### 2. **Library Loading Diagnostics**
+
+Implemented comprehensive library checking:
+
+```javascript
+function checkLibraries() {
+  const libs = {
+    'marked': typeof marked !== 'undefined',
+    'jsyaml': typeof jsyaml !== 'undefined', 
+    'd3': typeof d3 !== 'undefined'
+  };
+  
+  console.log('ORMD Edit: Library status:', libs);
+  // Detailed logging for each library...
+  
+  const missing = Object.entries(libs).filter(([name, loaded]) => !loaded).map(([name]) => name);
+  if (missing.length > 0) {
+    console.warn('ORMD Edit: Missing libraries:', missing);
+    showFeedback('warning', '⚠️ Missing libraries: ' + missing.join(', '));
+    return false;
+  }
+  return true;
+}
+```
+
+### 3. **Fixed Regular Expression**
+
+Corrected the semantic link parsing regex:
+
+```javascript
+// Before (broken)
+processedBody.replace(/\\[\\[([^\\]]+)\\]\\]/g, ...)
+
+// After (working)  
+processedBody.replace(/\[\[([^\]]+)\]\]/g, ...)
+```
+
+### 4. **DOM Ready Initialization**
+
+Moved all DOM-dependent code to proper initialization:
+
+```javascript
+window.addEventListener('DOMContentLoaded', function() {
+  // Panel switching logic
+  const panels = ['raw', 'history', 'help'];
+  panels.forEach(name => {
+    document.getElementById('toggle-' + name).onclick = () => {
+      // Safe DOM manipulation
+    };
+  });
+
+  // Editor setup  
+  setupEditor(document.getElementById('editor'));
+  setupEditor(document.getElementById('editor-split'));
+});
+```
+
+### 5. **Fixed Newline Parsing**
+
+Corrected string splitting for multi-line content:
+
+```javascript
+// Before (only 1 line detected)
+const lines = content.split('\\n');
+
+// After (proper line splitting)
+const lines = content.split('\n');
+```
+
+### 6. **Fallback Rendering Systems**
+
+Added backup renderers for when external libraries fail:
+
+```javascript
+// Markdown fallback
+if (typeof marked !== 'undefined') {
+  htmlContent = marked.parse(processedBody);
+} else {
+  // Basic HTML rendering fallback
+  htmlContent = processedBody
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code>$1</code>')
+    // ... more basic markdown patterns
+}
+
+// YAML parsing fallback  
+if (typeof jsyaml !== 'undefined') {
+  result.frontMatter = jsyaml.load(frontMatterYaml) || {};
+} else {
+  result.frontMatter = parseSimpleYaml(frontMatterYaml);
+}
+```
+
+## Template Structure Reorganization
+
+### Function Organization
+1. **Diagnostics & Error Handling** - Top of script
+2. **Utility Functions** - Available globally  
+3. **Main UI Functions** - Accessible from HTML onclick
+4. **Parsing & Rendering** - Core functionality
+5. **Event Handlers** - DOM-dependent code
+6. **Initialization** - DOMContentLoaded and window.load
+
+### Key Architectural Improvements
+- **Global Function Availability**: All functions called from HTML are globally accessible
+- **Error Boundaries**: Critical operations wrapped in error handling
+- **Graceful Degradation**: Fallback systems when dependencies fail
+- **Detailed Logging**: Comprehensive debugging information
+
+## Testing Results
+
+### Before Fixes
+```
+Uncaught ReferenceError: showPreview is not defined
+Uncaught SyntaxError: Invalid regular expression: /\\[\\[([^\\]]+)\\]\\]/g: Unmatched ')'
+Cannot read properties of null (reading 'addEventListener')
+```
+
+### After Fixes
+```
+ORMD Edit: Initializing diagnostics...
+ORMD Edit: Library status: {marked: true, jsyaml: true, d3: true}
+ORMD Edit: Split into 10 lines
+ORMD Edit: Front-matter start found at line 1 with delimiter ---
+ORMD Edit: Front-matter end found at line 7
+✅ Valid ORMD format
+```
+
+## Functionality Restored
+
+### Core Features Working
+- ✅ **Edit Mode**: Text editing with syntax highlighting
+- ✅ **Preview Mode**: Real-time markdown rendering  
+- ✅ **Split Mode**: Side-by-side editing and preview
+- ✅ **Sidebar Info**: Document metadata and help
+- ✅ **Auto-save**: Local storage backup
+- ✅ **File Operations**: Save and download functionality
+
+### Error Handling
+- ✅ **Graceful Failures**: Clear error messages instead of crashes
+- ✅ **Library Fallbacks**: Basic functionality when CDN fails
+- ✅ **Debug Information**: Detailed console logging for troubleshooting
+
+## Related CLI Fixes
+
+During this session, we also resolved CLI infrastructure issues:
+
+### 1. **Decorator Order Issues**
+Fixed `@click.pass_context` decorator placement for all commands.
+
+### 2. **Parameter Mismatch**
+Resolved `ParameterSource.COMMAND_LINE` vs `ParameterSource.COMMANDLINE` naming.
+
+### 3. **Convert Command Integration**  
+Properly integrated the `convert` command into the main CLI.
+
+## Impact
+
+This comprehensive fix restores the ORMD edit functionality to full working order, providing:
+
+- **Reliable editing interface** for ORMD documents
+- **Real-time preview capabilities** with proper error handling
+- **Professional debugging experience** with detailed diagnostics
+- **Graceful degradation** when network resources are unavailable
+- **Stable foundation** for future feature development
+
+The edit interface now provides a robust, user-friendly experience for creating and modifying ORMD documents with live preview capabilities and comprehensive error reporting. 
