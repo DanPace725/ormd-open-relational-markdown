@@ -417,6 +417,594 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  <script>
+    // Enhanced error handling and diagnostics
+    console.log('ORMD Edit: Initializing diagnostics...');
+    
+    // Global error handler
+    window.addEventListener('error', function(e) {{
+      console.error('ORMD Edit Error:', e.error, 'at', e.filename, ':', e.lineno);
+      showFeedback('error', '❌ JavaScript Error: ' + e.message);
+      return false; // Don't suppress the error completely
+    }});
+
+    // Check library loading status
+    function checkLibraries() {{
+      const libs = {{
+        'marked': typeof marked !== 'undefined',
+        'jsyaml': typeof jsyaml !== 'undefined',
+        'd3': typeof d3 !== 'undefined'
+      }};
+      
+      console.log('ORMD Edit: Library status:', libs);
+      console.log('ORMD Edit: marked available:', typeof marked !== 'undefined' ? 'YES' : 'NO');
+      console.log('ORMD Edit: jsyaml available:', typeof jsyaml !== 'undefined' ? 'YES' : 'NO');
+      console.log('ORMD Edit: d3 available:', typeof d3 !== 'undefined' ? 'YES' : 'NO');
+      
+      const missing = Object.entries(libs).filter(([name, loaded]) => !loaded).map(([name]) => name);
+      if (missing.length > 0) {{
+        console.warn('ORMD Edit: Missing libraries:', missing);
+        showFeedback('warning', '⚠️ Missing libraries: ' + missing.join(', '));
+        return false;
+      }}
+      return true;
+    }}
+
+    // Safe function wrapper with error handling
+    function safeCall(funcName, func) {{
+      try {{
+        console.log('ORMD Edit: Calling', funcName);
+        return func();
+      }} catch (error) {{
+        console.error('ORMD Edit: Error in', funcName, ':', error);
+        showFeedback('error', '❌ Error in ' + funcName + ': ' + error.message);
+        return null;
+      }}
+    }}
+
+    // Utility functions - moved to top for availability
+    function showFeedback(type, message) {{
+      const feedback = document.getElementById('validation-feedback');
+      if (feedback) {{
+        feedback.className = 'feedback-' + type;
+        feedback.textContent = message;
+      }} else {{
+        console.log('Feedback:', type, message);
+      }}
+    }}
+
+    function escapeHtml(text) {{
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }}
+
+    // Global variables
+    let originalContent = '';
+    let isModified = false;
+    let autoSaveTimer = null;
+    let currentMode = 'edit'; // 'edit', 'preview', 'split'
+
+    // Get the active editor (depends on current mode)
+    function getActiveEditor() {{
+      return currentMode === 'split' ? document.getElementById('editor-split') : document.getElementById('editor');
+    }}
+
+    // Main functions called from HTML buttons
+    function showEdit() {{
+      currentMode = 'edit';
+      updateViewMode();
+      syncEditorContent();
+      getActiveEditor().focus();
+    }}
+
+    function showPreview() {{
+      safeCall('showPreview', () => {{
+        currentMode = 'preview';
+        updateViewMode();
+        updatePreview();
+      }});
+    }}
+
+    function showSplit() {{
+      currentMode = 'split';
+      updateViewMode();
+      syncEditorContent();
+      updatePreview();
+      document.getElementById('editor-split').focus();
+    }}
+
+    function toggleSidebar() {{
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('collapsed');
+
+      const btn = document.getElementById('sidebar-toggle');
+      btn.textContent = sidebar.classList.contains('collapsed') ? '📋 Info' : '✖️ Close';
+    }}
+
+    function saveToOriginal() {{
+      const content = getActiveEditor().value;
+
+      // Use modern File System Access API if available
+      if ('showSaveFilePicker' in window) {{
+        saveWithFilePicker(content, '{file_name}');
+      }} else {{
+        // Fallback - show instructions
+        showFeedback('warning', '💾 Copy the content and save manually to: {file_name}');
+        // Also trigger download as backup
+        downloadCopy();
+      }}
+    }}
+
+    function downloadCopy() {{
+      const content = getActiveEditor().value;
+      const timestamp = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-');
+      const fileName = '{file_name}'.replace('.ormd', `_${{timestamp}}.ormd`);
+
+      const blob = new Blob([content], {{ type: 'text/plain' }});
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+
+      URL.revokeObjectURL(url);
+      showFeedback('success', '⬇️ Downloaded copy as ' + fileName);
+    }}
+
+    function updateViewMode() {{
+      // Hide all modes
+      document.getElementById('edit-area').classList.remove('active');
+      document.getElementById('preview-area').classList.remove('active');
+      document.getElementById('split-view').classList.remove('active');
+
+      // Remove active from all buttons
+      document.getElementById('edit-btn').classList.remove('active');
+      document.getElementById('preview-btn').classList.remove('active');
+      document.getElementById('split-btn').classList.remove('active');
+
+      // Show current mode
+      if (currentMode === 'edit') {{
+        document.getElementById('edit-area').classList.add('active');
+        document.getElementById('edit-btn').classList.add('active');
+      }} else if (currentMode === 'preview') {{
+        document.getElementById('preview-area').classList.add('active');
+        document.getElementById('preview-btn').classList.add('active');
+      }} else if (currentMode === 'split') {{
+        document.getElementById('split-view').classList.add('active');
+        document.getElementById('split-btn').classList.add('active');
+      }}
+    }}
+
+    function syncEditorContent() {{
+      const mainEditor = document.getElementById('editor');
+      const splitEditor = document.getElementById('editor-split');
+
+      if (currentMode === 'split') {{
+        splitEditor.value = mainEditor.value;
+      }} else {{
+        mainEditor.value = splitEditor.value;
+      }}
+    }}
+
+    // Editor event handlers
+    function setupEditor(editor) {{
+      editor.addEventListener('input', function() {{
+        isModified = true;
+        document.title = '● ' + document.title.replace('● ', '');
+
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(autoSave, 2000);
+
+        updateCharCount();
+        validateContent();
+
+        if (currentMode === 'split') {{
+          updatePreview();
+        }}
+      }});
+
+      // Tab key handling
+      editor.addEventListener('keydown', function(e) {{
+        if (e.key === 'Tab') {{
+          e.preventDefault();
+          const start = editor.selectionStart;
+          const end = editor.selectionEnd;
+          editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+          editor.selectionStart = editor.selectionEnd = start + 2;
+        }}
+      }});
+    }}
+
+    function autoSave() {{
+      const content = getActiveEditor().value;
+      localStorage.setItem('ormd-autosave-{file_path_safe}', content);
+      document.getElementById('auto-save-status').textContent =
+        '📁 Auto-saved at ' + new Date().toLocaleTimeString();
+    }}
+
+    function updateCharCount() {{
+      const content = getActiveEditor().value;
+      document.getElementById('char-count').textContent =
+        content.length + ' characters, ' + content.split('\n').length + ' lines';
+    }}
+
+    async function saveWithFilePicker(content, suggestedName) {{
+      try {{
+        const fileHandle = await window.showSaveFilePicker({{
+          suggestedName: suggestedName,
+          types: [
+            {{
+              description: 'ORMD files',
+              accept: {{ 'text/plain': ['.ormd'] }}
+            }}
+          ]
+        }});
+
+        const writable = await fileHandle.createWritable();
+        await writable.write(content);
+        await writable.close();
+
+        isModified = false;
+        document.title = document.title.replace('● ', '');
+        showFeedback('success', '💾 Saved successfully');
+
+      }} catch (err) {{
+        if (err.name !== 'AbortError') {{
+          showFeedback('error', '❌ Save failed: ' + err.message);
+        }}
+      }}
+    }}
+
+    function updatePreview() {{
+      safeCall('updatePreview', () => {{
+        const content = getActiveEditor().value;
+
+        // Update raw content panel
+        document.getElementById('raw-content').textContent = content;
+
+        // Parse ORMD content
+        const parsed = parseORMD(content);
+
+        // Render markdown with ORMD features
+        const renderedHTML = renderORMDContent(parsed);
+
+        // Update preview element
+        const previewElement = currentMode === 'split' ?
+          document.getElementById('split-preview-content') :
+          document.getElementById('preview-content');
+
+        previewElement.innerHTML = renderedHTML;
+
+        // Add smooth scrolling for anchor links in preview
+        addSmoothScrolling(previewElement);
+      }});
+    }}
+
+    function addSmoothScrolling(container) {{
+      container.addEventListener('click', function(e) {{
+        if (e.target.tagName === 'A' && e.target.getAttribute('href') && e.target.getAttribute('href').startsWith('#')) {{
+          e.preventDefault();
+          const targetId = e.target.getAttribute('href').substring(1);
+          const targetElement = container.querySelector('#' + targetId);
+          if (targetElement) {{
+            targetElement.scrollIntoView({{ behavior: 'smooth' }});
+            // Highlight the target briefly
+            const originalBg = targetElement.style.backgroundColor;
+            targetElement.style.backgroundColor = '#004080';
+            setTimeout(() => {{
+              targetElement.style.backgroundColor = originalBg;
+            }}, 1000);
+          }}
+        }}
+      }});
+    }}
+
+    function parseORMD(content) {{
+      console.log('ORMD Edit: parseORMD called with content:', content.substring(0, 100) + '...');
+      
+      // Parse ORMD document
+      const result = {{
+        frontMatter: {{}},
+        body: '',
+        links: [],
+        isValid: false,
+        errors: []
+      }};
+
+      if (!content.trim()) {{
+        result.errors.push('Document is empty');
+        console.log('ORMD Edit: Document is empty');
+        return result;
+      }}
+
+      // Check for ORMD version tag
+      if (!content.startsWith('<!-- ormd:0.1 -->')) {{
+        result.errors.push('Missing ORMD version tag');
+        console.log('ORMD Edit: Missing ORMD version tag');
+        return result;
+      }}
+      console.log('ORMD Edit: ORMD version tag found');
+
+      const lines = content.split('\n');
+      console.log('ORMD Edit: Split into', lines.length, 'lines');
+      console.log('ORMD Edit: First few lines:', lines.slice(0, 5));
+      
+      let frontMatterStart = -1;
+      let frontMatterEnd = -1;
+      let delimiter = '';
+
+      // Find front-matter block
+      for (let i = 1; i < lines.length; i++) {{
+        const line = lines[i].trim();
+        console.log('ORMD Edit: Line', i, ':', JSON.stringify(line));
+        
+        if (line === '+++' || line === '---') {{
+          if (frontMatterStart === -1) {{
+            frontMatterStart = i;
+            delimiter = line;
+            console.log('ORMD Edit: Front-matter start found at line', i, 'with delimiter', delimiter);
+          }} else if (line === delimiter) {{
+            frontMatterEnd = i;
+            console.log('ORMD Edit: Front-matter end found at line', i);
+            break;
+          }}
+        }}
+      }}
+
+      console.log('ORMD Edit: Front-matter boundaries:', frontMatterStart, 'to', frontMatterEnd);
+      
+      if (frontMatterStart === -1 || frontMatterEnd === -1) {{
+        result.errors.push('Invalid or missing front-matter block');
+        console.log('ORMD Edit: Invalid or missing front-matter block');
+        return result;
+      }}
+
+      // Extract front-matter YAML
+      const frontMatterYaml = lines.slice(frontMatterStart + 1, frontMatterEnd).join('\n');
+      console.log('ORMD Edit: Parsing YAML front-matter:', frontMatterYaml);
+      try {{
+        if (typeof jsyaml !== 'undefined') {{
+          console.log('ORMD Edit: Using js-yaml for YAML parsing');
+          result.frontMatter = jsyaml.load(frontMatterYaml) || {{}};
+        }} else {{
+          console.warn('ORMD Edit: js-yaml not available, using fallback parser');
+          // Fallback simple YAML parser for basic cases
+          result.frontMatter = parseSimpleYaml(frontMatterYaml);
+        }}
+        result.links = result.frontMatter.links || [];
+        console.log('ORMD Edit: Parsed front-matter:', result.frontMatter);
+      }} catch (e) {{
+        console.error('ORMD Edit: YAML parsing failed:', e);
+        result.errors.push('Invalid YAML in front-matter: ' + e.message);
+        return result;
+      }}
+
+      // Extract body
+      result.body = lines.slice(frontMatterEnd + 1).join('\n').trim();
+      result.isValid = true;
+
+      return result;
+    }}
+
+    function renderORMDContent(parsed) {{
+      if (!parsed.isValid) {{
+        return '<div style="padding: 20px; background: #3a1e1e; color: #f44336; border-radius: 6px; margin-bottom: 20px;">' +
+          '<h3>❌ Parsing Errors</h3>' +
+          '<ul>' + parsed.errors.map(error => '<li>' + escapeHtml(error) + '</li>').join('') + '</ul>' +
+          '</div>';
+      }}
+
+      // Process semantic links in body
+      let processedBody = parsed.body;
+
+      // Replace [[link-id]] with actual links
+      processedBody = processedBody.replace(/\[\[([^\]]+)\]\]/g, (match, linkId) => {{
+        const link = parsed.links.find(l => l.id === linkId);
+        if (link) {{
+          const rel = link.rel || 'related';
+          const to = link.to || '#' + linkId;
+          return `<a href="${{escapeHtml(to)}}" class="ormd-link ormd-link-${{escapeHtml(rel)}}">${{escapeHtml(linkId)}}</a>`;
+        }} else {{
+          return `<span class="ormd-link ormd-link-undefined">${{escapeHtml(linkId)}}</span>`;
+        }}
+      }});
+
+      // Render markdown
+      let htmlContent = '';
+      try {{
+        if (typeof marked !== 'undefined') {{
+          console.log('ORMD Edit: Using marked.js for markdown rendering');
+          htmlContent = marked.parse(processedBody);
+        }} else {{
+          console.warn('ORMD Edit: marked.js not available, using fallback renderer');
+          // Fallback: basic HTML rendering for simple markdown
+          htmlContent = processedBody
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, '<br>')
+            .replace(/^/, '<p>')
+            .replace(/$/, '</p>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+            .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+            .replace(/^### (.*$)/gm, '<h3>$1</h3>');
+        }}
+      }} catch (e) {{
+        console.error('ORMD Edit: Markdown rendering failed:', e);
+        return '<div style="padding: 20px; background: #3a1e1e; color: #f44336; border-radius: 6px;">' +
+          '<h3>❌ Markdown Rendering Error</h3>' +
+          '<p>' + escapeHtml(e.message) + '</p>' +
+          '<p>Raw content:</p><pre>' + escapeHtml(processedBody) + '</pre>' +
+          '</div>';
+      }}
+
+      // Add front-matter info at the top
+      let frontMatterHTML = '';
+      if (parsed.frontMatter.title) {{
+        frontMatterHTML += '<div style="padding: 16px; background: #1a1a1a; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #004080;">';
+        frontMatterHTML += '<h2 style="margin: 0 0 8px 0; color: #0066cc;">📄 ' + escapeHtml(parsed.frontMatter.title) + '</h2>';
+
+        if (parsed.frontMatter.authors && parsed.frontMatter.authors.length > 0) {{
+          frontMatterHTML += '<p style="margin: 4px 0; color: #ccc;">👤 ' +
+            parsed.frontMatter.authors.map(author =>
+              typeof author === 'string' ? author : (author.display || author.id)
+            ).join(', ') + '</p>';
+        }}
+
+        if (parsed.links.length > 0) {{
+          frontMatterHTML += '<p style="margin: 4px 0; color: #ccc;">🔗 ' + parsed.links.length + ' semantic link(s)</p>';
+        }}
+
+        if (parsed.frontMatter.permissions) {{
+          const perms = parsed.frontMatter.permissions;
+          frontMatterHTML += '<p style="margin: 4px 0; color: #ccc;">🔒 Mode: ' + (perms.mode || 'draft') +
+            ', Editable: ' + (perms.editable !== false) +
+            ', Signed: ' + (perms.signed === true) + '</p>';
+        }}
+
+        frontMatterHTML += '</div>';
+      }}
+
+      return frontMatterHTML + htmlContent;
+    }}
+
+    function parseSimpleYaml(yamlText) {{
+      // Very basic YAML parser for simple front-matter
+      // This handles basic key-value pairs and simple lists
+      const result = {{}};
+      const lines = yamlText.split('\n');
+      let currentKey = null;
+      let currentList = null;
+
+      for (const line of lines) {{
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+
+        if (line.startsWith('  - ') && currentList) {{
+          // List item
+          const value = line.substring(4).trim();
+          if (value.includes(':')) {{
+            // Object in list
+            const obj = {{}};
+            const parts = value.split(':');
+            obj[parts[0].trim()] = parts[1].trim();
+            currentList.push(obj);
+          }} else {{
+            currentList.push(value);
+          }}
+        }} else if (line.includes(':')) {{
+          // Key-value pair
+          const colonIndex = line.indexOf(':');
+          const key = line.substring(0, colonIndex).trim();
+          const value = line.substring(colonIndex + 1).trim();
+
+          if (value === '' || value === '[]') {{
+            // Empty value or empty list
+            result[key] = [];
+            currentList = result[key];
+            currentKey = key;
+          }} else {{
+            result[key] = value;
+            currentList = null;
+            currentKey = null;
+          }}
+        }}
+      }}
+
+      return result;
+    }}
+
+    function validateContent() {{
+      const content = getActiveEditor().value;
+
+      if (!content.trim()) {{
+        showFeedback('warning', '⚠️ Document is empty');
+        return false;
+      }}
+
+      if (!content.startsWith('<!-- ormd:0.1 -->')) {{
+        showFeedback('error', '❌ Missing ORMD version tag');
+        return false;
+      }}
+
+      if (!content.includes('+++') && !content.includes('---')) {{
+        showFeedback('error', '❌ Missing front-matter block');
+        return false;
+      }}
+
+      showFeedback('success', '✅ Valid ORMD format');
+      return true;
+    }}
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {{
+      if (e.ctrlKey) {{
+        switch(e.key) {{
+          case 's':
+            e.preventDefault();
+            saveToOriginal();
+            break;
+          case 'd':
+            e.preventDefault();
+            downloadCopy();
+            break;
+          case 'p':
+            e.preventDefault();
+            showPreview();
+            break;
+          case '\\\\':
+            e.preventDefault();
+            showSplit();
+            break;
+        }}
+      }}
+    }});
+
+    // Prevent accidental navigation
+    window.addEventListener('beforeunload', function(e) {{
+      if (isModified) {{
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+      }}
+    }});
+
+    // Initialize
+    window.addEventListener('load', function() {{
+      console.log('ORMD Edit: Initializing editor...');
+      
+      // Check library status first
+      checkLibraries();
+      
+      // Load auto-saved content if available
+      const autoSaved = localStorage.getItem('ormd-autosave-{file_path_safe}');
+      if (autoSaved && autoSaved !== originalContent) {{
+        if (confirm('Found auto-saved changes. Would you like to restore them?')) {{
+          getActiveEditor().value = autoSaved;
+          isModified = true;
+          document.title = '● ' + document.title;
+        }}
+      }}
+
+      updateCharCount();
+      validateContent();
+      
+      // Test preview functionality
+      safeCall('initial updatePreview', () => {{
+        updatePreview(); // Show initial preview
+      }});
+
+      // Add smooth scrolling to initial preview content
+      const previewArea = document.getElementById('preview-content');
+      const splitPreviewArea = document.getElementById('split-preview-content');
+      addSmoothScrolling(previewArea);
+      addSmoothScrolling(splitPreviewArea);
+      
+      console.log('ORMD Edit: Initialization complete');
+    }});
+  </script>
 </head>
 <body>
   <div id="toolbar">
@@ -513,503 +1101,27 @@
   </div>
 
   <script>
-    let originalContent = document.getElementById('editor').value;
-    let isModified = false;
-    let autoSaveTimer = null;
-    let currentMode = 'edit'; // 'edit', 'preview', 'split'
-
-    // Get the active editor (depends on current mode)
-    function getActiveEditor() {{
-      return currentMode === 'split' ? document.getElementById('editor-split') : document.getElementById('editor');
-    }}
-
-    // Panel switching logic for sidebar
-    const panels = ['raw', 'history', 'help'];
-    panels.forEach(name => {{
-      document.getElementById('toggle-' + name).onclick = () => {{
-        panels.forEach(n => {{
-          document.getElementById('toggle-' + n).classList.remove('active');
-          document.getElementById('panel-' + n).classList.remove('active');
-        }});
-        document.getElementById('toggle-' + name).classList.add('active');
-        document.getElementById('panel-' + name).classList.add('active');
-      }};
-    }});
-
-    // View mode switching
-    function showEdit() {{
-      currentMode = 'edit';
-      updateViewMode();
-      syncEditorContent();
-      getActiveEditor().focus();
-    }}
-
-    function showPreview() {{
-      currentMode = 'preview';
-      updateViewMode();
-      updatePreview();
-    }}
-
-    function showSplit() {{
-      currentMode = 'split';
-      updateViewMode();
-      syncEditorContent();
-      updatePreview();
-      document.getElementById('editor-split').focus();
-    }}
-
-    function updateViewMode() {{
-      // Hide all modes
-      document.getElementById('edit-area').classList.remove('active');
-      document.getElementById('preview-area').classList.remove('active');
-      document.getElementById('split-view').classList.remove('active');
-
-      // Remove active from all buttons
-      document.getElementById('edit-btn').classList.remove('active');
-      document.getElementById('preview-btn').classList.remove('active');
-      document.getElementById('split-btn').classList.remove('active');
-
-      // Show current mode
-      if (currentMode === 'edit') {{
-        document.getElementById('edit-area').classList.add('active');
-        document.getElementById('edit-btn').classList.add('active');
-      }} else if (currentMode === 'preview') {{
-        document.getElementById('preview-area').classList.add('active');
-        document.getElementById('preview-btn').classList.add('active');
-      }} else if (currentMode === 'split') {{
-        document.getElementById('split-view').classList.add('active');
-        document.getElementById('split-btn').classList.add('active');
-      }}
-    }}
-
-    function syncEditorContent() {{
-      const mainEditor = document.getElementById('editor');
-      const splitEditor = document.getElementById('editor-split');
-
-      if (currentMode === 'split') {{
-        splitEditor.value = mainEditor.value;
-      }} else {{
-        mainEditor.value = splitEditor.value;
-      }}
-    }}
-
-    function toggleSidebar() {{
-      const sidebar = document.getElementById('sidebar');
-      sidebar.classList.toggle('collapsed');
-
-      const btn = document.getElementById('sidebar-toggle');
-      btn.textContent = sidebar.classList.contains('collapsed') ? '📋 Info' : '✖️ Close';
-    }}
-
-    // Editor event handlers
-    function setupEditor(editor) {{
-      editor.addEventListener('input', function() {{
-        isModified = true;
-        document.title = '● ' + document.title.replace('● ', '');
-
-        clearTimeout(autoSaveTimer);
-        autoSaveTimer = setTimeout(autoSave, 2000);
-
-        updateCharCount();
-        validateContent();
-
-        if (currentMode === 'split') {{
-          updatePreview();
-        }}
+    // Initialize when DOM is ready
+    window.addEventListener('DOMContentLoaded', function() {{
+      // Panel switching logic for sidebar
+      const panels = ['raw', 'history', 'help'];
+      panels.forEach(name => {{
+        document.getElementById('toggle-' + name).onclick = () => {{
+          panels.forEach(n => {{
+            document.getElementById('toggle-' + n).classList.remove('active');
+            document.getElementById('panel-' + n).classList.remove('active');
+          }});
+          document.getElementById('toggle-' + name).classList.add('active');
+          document.getElementById('panel-' + name).classList.add('active');
+        }};
       }});
 
-      // Tab key handling
-      editor.addEventListener('keydown', function(e) {{
-        if (e.key === 'Tab') {{
-          e.preventDefault();
-          const start = editor.selectionStart;
-          const end = editor.selectionEnd;
-          editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
-          editor.selectionStart = editor.selectionEnd = start + 2;
-        }}
-      }});
-    }}
-
-    setupEditor(document.getElementById('editor'));
-    setupEditor(document.getElementById('editor-split'));
-
-    function autoSave() {{
-      const content = getActiveEditor().value;
-      localStorage.setItem('ormd-autosave-{file_path_safe}', content);
-      document.getElementById('auto-save-status').textContent =
-        '📁 Auto-saved at ' + new Date().toLocaleTimeString();
-    }}
-
-    function updateCharCount() {{
-      const content = getActiveEditor().value;
-      document.getElementById('char-count').textContent =
-        content.length + ' characters, ' + content.split('\\n').length + ' lines';
-    }}
-
-    function saveToOriginal() {{
-      const content = getActiveEditor().value;
-
-      // Use modern File System Access API if available
-      if ('showSaveFilePicker' in window) {{
-        saveWithFilePicker(content, '{file_name}');
-      }} else {{
-        // Fallback - show instructions
-        showFeedback('warning', '💾 Copy the content and save manually to: {file_name}');
-        // Also trigger download as backup
-        downloadCopy();
-      }}
-    }}
-
-    function downloadCopy() {{
-      const content = getActiveEditor().value;
-      const timestamp = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-');
-      const fileName = '{file_name}'.replace('.ormd', `_${{timestamp}}.ormd`);
-
-      const blob = new Blob([content], {{ type: 'text/plain' }});
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
-
-      URL.revokeObjectURL(url);
-      showFeedback('success', '⬇️ Downloaded copy as ' + fileName);
-    }}
-
-    async function saveWithFilePicker(content, suggestedName) {{
-      try {{
-        const fileHandle = await window.showSaveFilePicker({{
-          suggestedName: suggestedName,
-          types: [
-            {{
-              description: 'ORMD files',
-              accept: {{ 'text/plain': ['.ormd'] }}
-            }}
-          ]
-        }});
-
-        const writable = await fileHandle.createWritable();
-        await writable.write(content);
-        await writable.close();
-
-        isModified = false;
-        document.title = document.title.replace('● ', '');
-        showFeedback('success', '💾 Saved successfully');
-
-      }} catch (err) {{
-        if (err.name !== 'AbortError') {{
-          showFeedback('error', '❌ Save failed: ' + err.message);
-        }}
-      }}
-    }}
-
-    function updatePreview() {{
-      const content = getActiveEditor().value;
-
-      // Update raw content panel
-      document.getElementById('raw-content').textContent = content;
-
-      // Parse ORMD content
-      const parsed = parseORMD(content);
-
-      // Render markdown with ORMD features
-      const renderedHTML = renderORMDContent(parsed);
-
-      // Update preview element
-      const previewElement = currentMode === 'split' ?
-        document.getElementById('split-preview-content') :
-        document.getElementById('preview-content');
-
-      previewElement.innerHTML = renderedHTML;
-
-      // Add smooth scrolling for anchor links in preview
-      addSmoothScrolling(previewElement);
-    }}
-
-    function addSmoothScrolling(container) {{
-      container.addEventListener('click', function(e) {{
-        if (e.target.tagName === 'A' && e.target.getAttribute('href') && e.target.getAttribute('href').startsWith('#')) {{
-          e.preventDefault();
-          const targetId = e.target.getAttribute('href').substring(1);
-          const targetElement = container.querySelector('#' + targetId);
-          if (targetElement) {{
-            targetElement.scrollIntoView({{ behavior: 'smooth' }});
-            // Highlight the target briefly
-            const originalBg = targetElement.style.backgroundColor;
-            targetElement.style.backgroundColor = '#004080';
-            setTimeout(() => {{
-              targetElement.style.backgroundColor = originalBg;
-            }}, 1000);
-          }}
-        }}
-      }});
-    }}
-
-    function parseORMD(content) {{
-      // Parse ORMD document
-      const result = {{
-        frontMatter: {{}},
-        body: '',
-        links: [],
-        isValid: false,
-        errors: []
-      }};
-
-      if (!content.trim()) {{
-        result.errors.push('Document is empty');
-        return result;
-      }}
-
-      // Check for ORMD version tag
-      if (!content.startsWith('<!-- ormd:0.1 -->')) {{
-        result.errors.push('Missing ORMD version tag');
-        return result;
-      }}
-
-      const lines = content.split('\\n');
-      let frontMatterStart = -1;
-      let frontMatterEnd = -1;
-      let delimiter = '';
-
-      // Find front-matter block
-      for (let i = 1; i < lines.length; i++) {{
-        const line = lines[i].trim();
-        if (line === '+++' || line === '---') {{
-          if (frontMatterStart === -1) {{
-            frontMatterStart = i;
-            delimiter = line;
-          }} else if (line === delimiter) {{
-            frontMatterEnd = i;
-            break;
-          }}
-        }}
-      }}
-
-      if (frontMatterStart === -1 || frontMatterEnd === -1) {{
-        result.errors.push('Invalid or missing front-matter block');
-        return result;
-      }}
-
-      // Extract front-matter YAML
-      const frontMatterYaml = lines.slice(frontMatterStart + 1, frontMatterEnd).join('\\n');
-      try {{
-        if (typeof jsyaml !== 'undefined') {{
-          result.frontMatter = jsyaml.load(frontMatterYaml) || {{}};
-        }} else {{
-          // Fallback simple YAML parser for basic cases
-          result.frontMatter = parseSimpleYaml(frontMatterYaml);
-        }}
-        result.links = result.frontMatter.links || [];
-      }} catch (e) {{
-        result.errors.push('Invalid YAML in front-matter: ' + e.message);
-        return result;
-      }}
-
-      // Extract body
-      result.body = lines.slice(frontMatterEnd + 1).join('\\n').trim();
-      result.isValid = true;
-
-      return result;
-    }}
-
-    function renderORMDContent(parsed) {{
-      if (!parsed.isValid) {{
-        return '<div style="padding: 20px; background: #3a1e1e; color: #f44336; border-radius: 6px; margin-bottom: 20px;">' +
-          '<h3>❌ Parsing Errors</h3>' +
-          '<ul>' + parsed.errors.map(error => '<li>' + escapeHtml(error) + '</li>').join('') + '</ul>' +
-          '</div>';
-      }}
-
-      // Process semantic links in body
-      let processedBody = parsed.body;
-
-      // Replace [[link-id]] with actual links
-      processedBody = processedBody.replace(/\\[\\[([^\\]]+)\\]\\]/g, (match, linkId) => {{
-        const link = parsed.links.find(l => l.id === linkId);
-        if (link) {{
-          const rel = link.rel || 'related';
-          const to = link.to || '#' + linkId;
-          return `<a href="${{escapeHtml(to)}}" class="ormd-link ormd-link-${{escapeHtml(rel)}}">${{escapeHtml(linkId)}}</a>`;
-        }} else {{
-          return `<span class="ormd-link ormd-link-undefined">${{escapeHtml(linkId)}}</span>`;
-        }}
-      }});
-
-      // Render markdown
-      let htmlContent = '';
-      try {{
-        htmlContent = marked.parse(processedBody);
-      }} catch (e) {{
-        return '<div style="padding: 20px; background: #3a1e1e; color: #f44336; border-radius: 6px;">' +
-          '<h3>❌ Markdown Rendering Error</h3>' +
-          '<p>' + escapeHtml(e.message) + '</p>' +
-          '</div>';
-      }}
-
-      // Add front-matter info at the top
-      let frontMatterHTML = '';
-      if (parsed.frontMatter.title) {{
-        frontMatterHTML += '<div style="padding: 16px; background: #1a1a1a; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #004080;">';
-        frontMatterHTML += '<h2 style="margin: 0 0 8px 0; color: #0066cc;">📄 ' + escapeHtml(parsed.frontMatter.title) + '</h2>';
-
-        if (parsed.frontMatter.authors && parsed.frontMatter.authors.length > 0) {{
-          frontMatterHTML += '<p style="margin: 4px 0; color: #ccc;">👤 ' +
-            parsed.frontMatter.authors.map(author =>
-              typeof author === 'string' ? author : (author.display || author.id)
-            ).join(', ') + '</p>';
-        }}
-
-        if (parsed.links.length > 0) {{
-          frontMatterHTML += '<p style="margin: 4px 0; color: #ccc;">🔗 ' + parsed.links.length + ' semantic link(s)</p>';
-        }}
-
-        if (parsed.frontMatter.permissions) {{
-          const perms = parsed.frontMatter.permissions;
-          frontMatterHTML += '<p style="margin: 4px 0; color: #ccc;">🔒 Mode: ' + (perms.mode || 'draft') +
-            ', Editable: ' + (perms.editable !== false) +
-            ', Signed: ' + (perms.signed === true) + '</p>';
-        }}
-
-        frontMatterHTML += '</div>';
-      }}
-
-      return frontMatterHTML + htmlContent;
-    }}
-
-    function escapeHtml(text) {{
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }}
-
-    function parseSimpleYaml(yamlText) {{
-      // Very basic YAML parser for simple front-matter
-      // This handles basic key-value pairs and simple lists
-      const result = {{}};
-      const lines = yamlText.split('\\n');
-      let currentKey = null;
-      let currentList = null;
-
-      for (const line of lines) {{
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
-
-        if (line.startsWith('  - ') && currentList) {{
-          // List item
-          const value = line.substring(4).trim();
-          if (value.includes(':')) {{
-            // Object in list
-            const obj = {{}};
-            const parts = value.split(':');
-            obj[parts[0].trim()] = parts[1].trim();
-            currentList.push(obj);
-          }} else {{
-            currentList.push(value);
-          }}
-        }} else if (line.includes(':')) {{
-          // Key-value pair
-          const colonIndex = line.indexOf(':');
-          const key = line.substring(0, colonIndex).trim();
-          const value = line.substring(colonIndex + 1).trim();
-
-          if (value === '' || value === '[]') {{
-            // Empty value or empty list
-            result[key] = [];
-            currentList = result[key];
-            currentKey = key;
-          }} else {{
-            result[key] = value;
-            currentList = null;
-            currentKey = null;
-          }}
-        }}
-      }}
-
-      return result;
-    }}
-
-    function validateContent() {{
-      const content = getActiveEditor().value;
-
-      if (!content.trim()) {{
-        showFeedback('warning', '⚠️ Document is empty');
-        return false;
-      }}
-
-      if (!content.startsWith('<!-- ormd:0.1 -->')) {{
-        showFeedback('error', '❌ Missing ORMD version tag');
-        return false;
-      }}
-
-      if (!content.includes('+++') && !content.includes('---')) {{
-        showFeedback('error', '❌ Missing front-matter block');
-        return false;
-      }}
-
-      showFeedback('success', '✅ Valid ORMD format');
-      return true;
-    }}
-
-    function showFeedback(type, message) {{
-      const feedback = document.getElementById('validation-feedback');
-      feedback.className = 'feedback-' + type;
-      feedback.textContent = message;
-    }}
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {{
-      if (e.ctrlKey) {{
-        switch(e.key) {{
-          case 's':
-            e.preventDefault();
-            saveToOriginal();
-            break;
-          case 'd':
-            e.preventDefault();
-            downloadCopy();
-            break;
-          case 'p':
-            e.preventDefault();
-            showPreview();
-            break;
-          case '\\\\':
-            e.preventDefault();
-            showSplit();
-            break;
-        }}
-      }}
-    }});
-
-    // Prevent accidental navigation
-    window.addEventListener('beforeunload', function(e) {{
-      if (isModified) {{
-        e.preventDefault();
-        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-      }}
-    }});
-
-    // Initialize
-    window.addEventListener('load', function() {{
-      // Load auto-saved content if available
-      const autoSaved = localStorage.getItem('ormd-autosave-{file_path_safe}');
-      if (autoSaved && autoSaved !== originalContent) {{
-        if (confirm('Found auto-saved changes. Would you like to restore them?')) {{
-          getActiveEditor().value = autoSaved;
-          isModified = true;
-          document.title = '● ' + document.title;
-        }}
-      }}
-
-      updateCharCount();
-      validateContent();
-      updatePreview(); // Show initial preview
-
-      // Add smooth scrolling to initial preview content
-      const previewArea = document.getElementById('preview-content');
-      const splitPreviewArea = document.getElementById('split-preview-content');
-      addSmoothScrolling(previewArea);
-      addSmoothScrolling(splitPreviewArea);
+      // Set originalContent when DOM is ready
+      originalContent = document.getElementById('editor').value;
+      
+      // Setup editors when DOM is ready
+      setupEditor(document.getElementById('editor'));
+      setupEditor(document.getElementById('editor-split'));
     }});
   </script>
 </body>

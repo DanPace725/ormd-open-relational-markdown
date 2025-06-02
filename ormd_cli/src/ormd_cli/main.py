@@ -44,8 +44,8 @@ def cli(ctx, verbose, quiet):
         pass # setup_logging will handle precedence
     setup_logging(verbose, quiet)
 
-@click.pass_context # New decorator
 @cli.command()     # Existing decorator
+@click.pass_context # New decorator
 @click.argument('file_path')
 def create(ctx, file_path: str): # Added ctx
     """Create a new ORMD file with minimal front-matter.
@@ -93,8 +93,8 @@ def create(ctx, file_path: str): # Added ctx
     except Exception as e:
         logger.error(f"{SYMBOLS['error']} Failed to create file: {str(e)}")
         # exit(1) removed for click consistency, though it was present in the original create
-@click.pass_context # New decorator
 @cli.command()
+@click.pass_context # New decorator
 @click.argument('file_path')
 # verbose option is now global, remove from here if not specifically overriding global
 # For now, keeping it to see if click handles local vs global context options gracefully
@@ -118,7 +118,7 @@ def validate(ctx, file_path, verbose): # Added ctx, verbose might be from global
     # Determine if local verbose was explicitly set, otherwise use global
     # This assumes the local verbose flag is meant to override the global for this command.
     # If not, then `verbose_flag = ctx.obj.get('VERBOSE', False)` would be sufficient.
-    verbose_flag = verbose if ctx.get_parameter_source('verbose') == click.core.ParameterSource.COMMAND_LINE else ctx.obj.get('VERBOSE', False)
+    verbose_flag = verbose if ctx.get_parameter_source('verbose') == click.core.ParameterSource.COMMANDLINE else ctx.obj.get('VERBOSE', False)
 
     if verbose_flag or not is_valid:
         # Show detailed validation summary
@@ -139,8 +139,8 @@ def validate(ctx, file_path, verbose): # Added ctx, verbose might be from global
     if not is_valid:
         exit(1)
 
-@click.pass_context # New decorator
 @cli.command()
+@click.pass_context # New decorator
 @click.argument('content_file')
 @click.argument('meta_file')
 @click.option('--out', '-o', default='package.ormd', help='Output package file')
@@ -186,8 +186,8 @@ def pack(ctx, content_file, meta_file, out, validate, overwrite): # Added overwr
         logger.error(f"{SYMBOLS['error']} Failed to create package")
         exit(1)
 
-@click.pass_context # New decorator
 @cli.command()
+@click.pass_context # New decorator
 @click.argument('package_file')
 @click.option('--out-dir', '-d', default='./unpacked', help='Output directory')
 @click.option('--overwrite', is_flag=True, help='Overwrite existing files') # Overwrite option is already here
@@ -233,13 +233,12 @@ def unpack(ctx, package_file, out_dir, overwrite): # Added ctx
         logger.error(f"{SYMBOLS['error']} Failed to unpack {package_file}")
         exit(1)
 
-@click.pass_context # New decorator
 @cli.command()
+@click.pass_context # New decorator
 @click.argument('file_path')
 @click.option('--dry-run', '-n', is_flag=True, help='Show what would be updated without making changes')
 @click.option('--force-update', '-f', is_flag=True, help='Update locked fields (ignore locked: true)')
-# verbose option is now global
-# @click.option('--verbose', '-v', is_flag=True, help='Show detailed update information')
+@click.option('--verbose', '-v', is_flag=True, help='Show detailed update information (overrides global -v).')
 def update(ctx, file_path, dry_run, force_update, verbose): # Added ctx, verbose might be from global
     # If local verbose is removed, use: verbose = ctx.obj.get('VERBOSE', False)
     """Update and sync front-matter fields (date_modified, word_count, etc.).
@@ -247,7 +246,7 @@ def update(ctx, file_path, dry_run, force_update, verbose): # Added ctx, verbose
     The -v/--verbose flag (global or command-specific) shows detailed update information.
 
     Examples:
-    
+    
       ormd update my_document.ormd
       ormd -v update my_document.ormd
       ormd update my_document.ormd --dry-run
@@ -256,18 +255,10 @@ def update(ctx, file_path, dry_run, force_update, verbose): # Added ctx, verbose
     logger.debug(f"Updating file: {file_path}")
     updater = ORMDUpdater()
     
-    try:
-        result = updater.update_file(
-            file_path, 
-            dry_run=dry_run, 
-            force_update=force_update, 
-            verbose=verbose
-        )
-        
     # Determine if local verbose was explicitly set for update, otherwise use global
     # This assumes the local verbose flag is meant to override the global for this command.
     # If not, then `verbose_flag = ctx.obj.get('VERBOSE', False)` would be sufficient.
-    verbose_flag = verbose if ctx.get_parameter_source('verbose') == click.core.ParameterSource.COMMAND_LINE else ctx.obj.get('VERBOSE', False)
+    verbose_flag = verbose if ctx.get_parameter_source('verbose') == click.core.ParameterSource.COMMANDLINE else ctx.obj.get('VERBOSE', False)
 
     try:
         result = updater.update_file(
@@ -303,8 +294,8 @@ def update(ctx, file_path, dry_run, force_update, verbose): # Added ctx, verbose
         logger.error(f"{SYMBOLS['error']} Failed to update {file_path}: {str(e)}")
         exit(1)
 
-@click.pass_context # New decorator
 @cli.command()
+@click.pass_context # New decorator
 @click.argument('input_file')
 @click.option('--out', '-o', default=None, help='Output HTML file')
 @click.option('--overwrite', is_flag=True, help='Overwrite the output file if it already exists.') # New
@@ -365,8 +356,8 @@ def render(ctx, input_file, out, overwrite: bool): # Added overwrite
     out_path.write_text(html_content, encoding='utf-8')
     logger.info(f"{SYMBOLS['success']} Rendered HTML written to: {out_path}") # Use out_path here
 
-@click.pass_context # New decorator
 @cli.command()
+@click.pass_context # New decorator
 @click.argument('file_path')
 @click.option('--port', '-p', default=0, help='Local server port (0 for random)')
 @click.option('--no-browser', is_flag=True, help='Don\'t automatically open browser')
@@ -433,8 +424,8 @@ def open(ctx, file_path, port, no_browser, show_url): # Added ctx
         logger.error(f"{SYMBOLS['error']} Failed to open {file_path}: {str(e)}")
         exit(1)
 
-@click.pass_context # New decorator
 @cli.command()
+@click.pass_context # New decorator
 @click.argument('file_path')
 @click.option('--port', '-p', default=0, help='Local server port (0 for random)')
 @click.option('--no-browser', is_flag=True, help='Don\'t automatically open browser')

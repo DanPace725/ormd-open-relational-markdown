@@ -77,8 +77,8 @@ def _parse_pdf_date_string(pdf_date_str: str) -> Optional[str]:
 
     return dt.isoformat().replace("+00:00", "Z")
 
-@click.pass_context # New decorator
 @click.command(name="convert") # Existing decorator
+@click.pass_context # New decorator
 @click.argument('input_file_path', type=click.Path(exists=True, dir_okay=False, resolve_path=True))
 @click.argument('output_ormd_path', type=click.Path(dir_okay=False, resolve_path=True))
 @click.option('--input-format', '-f', type=click.Choice(['txt', 'md', 'pdf'], case_sensitive=False), help='Specify the input file format.')
