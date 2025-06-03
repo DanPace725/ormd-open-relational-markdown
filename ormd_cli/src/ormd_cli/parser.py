@@ -4,10 +4,10 @@ import yaml
 from typing import Tuple, Dict, Optional, List
 
 
-def parse_document(content: str) -> Tuple[Optional[Dict], str, Optional[Dict[str, str]], List[str]]:
+def parse_document(content: str) -> Tuple[Optional[Dict], str, Optional[Dict[str, str]], List[Dict[str, str]], List[str]]:
     """Parse full ORMD document content.
 
-    Returns a tuple ``(front_matter, body, metadata, errors)``.
+    Returns a tuple ``(front_matter, body, metadata, auto_links, errors)``.
     ``front_matter`` will be ``None`` if YAML parsing fails.
     ``metadata`` is always ``None`` in the new schema (no more +++meta blocks).
     ``errors`` contains any parsing related warnings or errors.
@@ -16,11 +16,13 @@ def parse_document(content: str) -> Tuple[Optional[Dict], str, Optional[Dict[str
     since all metadata now goes in the front-matter YAML block.
     """
     errors: List[str] = []
+    auto_links: List[Dict[str, str]] = []
+    link_id_counter = 1
     
     # Check for version tag at the beginning
     if not content.strip().startswith('<!-- ormd:0.1 -->'):
         errors.append("Missing or invalid version tag (expected at the beginning of the document)")
-        return None, "", None, errors
+        return None, "", None, auto_links, errors
     
     # Remove the version tag
     content_without_version = re.sub(r'^<!-- ormd:0\.1 -->\s*\n?', '', content, flags=re.MULTILINE)
@@ -31,7 +33,7 @@ def parse_document(content: str) -> Tuple[Optional[Dict], str, Optional[Dict[str
     # Validate YAML if present
     if front_matter is None and content_without_version.strip().startswith(('---', '+++')):
         errors.append("Invalid YAML in front-matter")
-        return None, body, None, errors
+        return None, body, None, auto_links, errors
     
     # Convert empty front-matter to empty dict
     if front_matter is None:
@@ -42,7 +44,7 @@ def parse_document(content: str) -> Tuple[Optional[Dict], str, Optional[Dict[str
         if content_without_version.strip().startswith(('---', '+++')):
             errors.append("Error: Invalid YAML in front-matter.")
             # No further checks needed if the primary front-matter is invalid
-            return None, body, None, errors
+            return None, body, None, auto_links, errors
         # If no front-matter delimiters at all, it's a valid document with an empty front_matter
         front_matter = {}
     else: # Valid initial front-matter was found
@@ -56,8 +58,25 @@ def parse_document(content: str) -> Tuple[Optional[Dict], str, Optional[Dict[str
         errors.append("Error: `+++meta` blocks are no longer supported. All metadata must be in the YAML front-matter.")
     if re.search(r'^[ ]*\+\+\+end-meta\b', body, re.MULTILINE): # Check for +++end-meta as well
         errors.append("Error: `+++end-meta` blocks are no longer supported.")
+
+    # Parse inline semantic links
+    inline_link_pattern = r'\[([^\]]+)\]\(([^\)]+)(?:\s+"([^\"]+)")?\)'
+    for match in re.finditer(inline_link_pattern, body):
+        display_text = match.group(1)
+        target = match.group(2)
+        relationship = match.group(3)  # This will be None if not present
+
+        link_data = {
+            "id": f"auto-link-{link_id_counter}",
+            "text": display_text,
+            "target": target,
+            "rel": relationship,
+            "source": "inline"
+        }
+        auto_links.append(link_data)
+        link_id_counter += 1
     
-    return front_matter, body, None, errors
+    return front_matter, body, None, auto_links, errors
 
 
 def _parse_front_matter_and_body(content: str) -> Tuple[Optional[Dict], str]:
